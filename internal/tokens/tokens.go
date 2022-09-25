@@ -6,7 +6,10 @@
 // token implementation (thanks!).
 package tokens
 
-import "strconv"
+import (
+	"errors"
+	"strconv"
+)
 
 type TokID int
 
@@ -65,7 +68,7 @@ const (
 )
 
 var tokens = [...]string{
-	EOF: "EOF",
+	EOF: "",
 
 	LEFT_PAREN:  "(",
 	RIGHT_PAREN: ")",
@@ -110,17 +113,47 @@ var tokens = [...]string{
 	WHILE:  "WHILE",
 }
 
+func (tid TokID) Valid() bool {
+	return tid >= 0 && tid < TokID(len(tokens))
+}
+
 type Token struct {
-	ID TokID
+	id      TokID // TokenType in Crafting Interpreters
+	lexeme  string
+	line    int
+	literal interface{}
+}
+
+func New(tid TokID, lex string, loc int, obj interface{}) (*Token, error) {
+	if !tid.Valid() {
+		return nil, errors.New("Invalid TokID passed to NewToken")
+	}
+	return &Token{id: tid, lexeme: lex, line: loc, literal: obj}, nil
+}
+
+func (t Token) ID() TokID {
+	return t.id
+}
+
+func (t Token) Lexeme() string {
+	return t.lexeme
+}
+
+func (t Token) Line() int {
+	return t.line
+}
+
+func (t Token) Literal() interface{} {
+	return t.literal
 }
 
 func (t Token) String() string {
 	s := ""
-	if 0 <= t.ID && t.ID < TokID(len(tokens)) {
-		s = tokens[t.ID]
+	if t.ID().Valid() {
+		s = tokens[t.ID()]
 	}
 	if s == "" {
-		s = "token (" + strconv.Itoa(int(t.ID)) + ")"
+		s = "token (" + strconv.Itoa(int(t.ID())) + ")"
 	}
 	return s
 }

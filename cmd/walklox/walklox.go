@@ -51,8 +51,11 @@ func runPrompt(p string) {
 }
 
 func run(script []byte) error {
-	inpt := scanner.NewScanner()
-	toks := inpt.scanTokens()
+	inpt, err := scanner.New(script)
+	if err != nil {
+		return err
+	}
+	toks := inpt.ScanTokens()
 
 	for tok := range toks {
 		fmt.Println(tok)

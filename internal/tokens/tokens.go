@@ -68,7 +68,7 @@ const (
 )
 
 var tokens = [...]string{
-	EOF: "",
+	EOF: "EOF",
 
 	LEFT_PAREN:  "(",
 	RIGHT_PAREN: ")",

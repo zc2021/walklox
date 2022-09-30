@@ -19,8 +19,8 @@ const (
 	begin_single_char_toks
 	LEFT_PAREN  // (
 	RIGHT_PAREN // )
-	LEFT_BRACE  // [
-	RIGHT_BRACE // ]
+	LEFT_BRACE  // {
+	RIGHT_BRACE // }
 	COMMA       // ,
 	DOT         // .
 	MINUS       // -
@@ -72,8 +72,8 @@ var tokens = [...]string{
 
 	LEFT_PAREN:  "(",
 	RIGHT_PAREN: ")",
-	LEFT_BRACE:  "[",
-	RIGHT_BRACE: "]",
+	LEFT_BRACE:  "{",
+	RIGHT_BRACE: "}",
 	COMMA:       ",",
 	DOT:         ".",
 	MINUS:       "-",
@@ -113,6 +113,25 @@ var tokens = [...]string{
 	WHILE:  "WHILE",
 }
 
+var Keywords = map[string]TokID{
+	"and":    AND,
+	"class":  CLASS,
+	"else":   ELSE,
+	"false":  FALSE,
+	"fun":    FUN,
+	"for":    FOR,
+	"if":     IF,
+	"nil":    NIL,
+	"or":     OR,
+	"print":  PRINT,
+	"return": RETURN,
+	"super":  SUPER,
+	"this":   THIS,
+	"true":   TRUE,
+	"var":    VAR,
+	"while":  WHILE,
+}
+
 func (tid TokID) Valid() bool {
 	return tid >= 0 && tid < TokID(len(tokens))
 }
@@ -126,28 +145,28 @@ type Token struct {
 
 func New(tid TokID, lex string, loc int, obj interface{}) (*Token, error) {
 	if !tid.Valid() {
-		return nil, errors.New("Invalid TokID passed to NewToken")
+		return nil, errors.New("invalid TokID passed to NewToken")
 	}
 	return &Token{id: tid, lexeme: lex, line: loc, literal: obj}, nil
 }
 
-func (t Token) ID() TokID {
+func (t *Token) ID() TokID {
 	return t.id
 }
 
-func (t Token) Lexeme() string {
+func (t *Token) Lexeme() string {
 	return t.lexeme
 }
 
-func (t Token) Line() int {
+func (t *Token) Line() int {
 	return t.line
 }
 
-func (t Token) Literal() interface{} {
+func (t *Token) Literal() interface{} {
 	return t.literal
 }
 
-func (t Token) String() string {
+func (t *Token) String() string {
 	s := ""
 	if t.ID().Valid() {
 		s = tokens[t.ID()]

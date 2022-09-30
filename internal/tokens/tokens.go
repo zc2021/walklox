@@ -13,6 +13,8 @@ import (
 
 type TokID int
 
+//go:generate stringer -type=TokID
+
 const (
 	EOF TokID = iota
 

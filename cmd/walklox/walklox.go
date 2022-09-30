@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"devZ/lox/internal/reporters"
 	"devZ/lox/internal/scanner"
 )
 
@@ -29,16 +30,13 @@ func runFile(filePath string) {
 		panic(err)
 	}
 
-	err = run(script)
-	if err != nil {
-		os.Exit(65)
-	}
+	run(script)
 }
 
 func runPrompt(p string) {
 	input := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Println(p)
+		fmt.Print(p)
 		line, err := input.ReadBytes('\n')
 		if err != nil {
 			panic(err)
@@ -50,15 +48,15 @@ func runPrompt(p string) {
 	}
 }
 
-func run(script []byte) error {
-	inpt, err := scanner.New(script)
-	if err != nil {
-		return err
-	}
+func run(script []byte) {
+	accum := reporters.Accumulator{}
+	inpt := scanner.New(script, &accum)
 	toks := inpt.ScanTokens()
-
-	for tok := range toks {
+	if accum.HasErrors() {
+		accum.PrintErrors()
+		return
+	}
+	for _, tok := range toks {
 		fmt.Println(tok)
 	}
-	return nil
 }

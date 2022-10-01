@@ -1,0 +1,1 @@
+This is a Go implementation of Lox, following Robert Nystrom's [__Crafting Interpreters__](https://www.craftinginterpreters.com)

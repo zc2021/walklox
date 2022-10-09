@@ -29,7 +29,6 @@ func runFile(filePath string) {
 	if err != nil {
 		panic(err)
 	}
-
 	run(script)
 }
 

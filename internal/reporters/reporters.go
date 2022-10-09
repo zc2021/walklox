@@ -26,6 +26,10 @@ func (le loxError) String() string {
 	return fmt.Sprintf("[line %d] Error: %s", le.line, le.message)
 }
 
+func (le loxError) Error() string {
+	return fmt.Sprintf("[line %d] Error: %s", le.line, le.message)
+}
+
 func (lc loxComment) String() string {
 	return fmt.Sprintf("[line %d] Comment: %s", lc.line, lc.message)
 }

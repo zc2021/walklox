@@ -17,6 +17,7 @@ func visitSig(param, acceptorStr string) tools.FuncStr {
 		Params: []string{
 			fmt.Sprintf("%s *%s", param, acceptorStr),
 		},
+		Return: []string{"interface{}"},
 	}
 }
 
@@ -28,8 +29,9 @@ func acceptMethod(param, recStr string) tools.FuncStr {
 		Receiver: fmt.Sprintf("%s *%s", param, recStr),
 		Params:   []string{"v Visitor"},
 		Body: []string{
-			fmt.Sprintf("v.%s(%s)", visitName, param),
+			fmt.Sprintf("return v.%s(%s)", visitName, param),
 		},
+		Return: []string{"interface{}"},
 	}
 }
 
@@ -40,26 +42,26 @@ func main() {
 	}
 
 	exprs := []tools.StructStr{
-		tools.StructStr{"Expr", []string{}},
-		tools.StructStr{"Binary", []string{"Left Expr", "Operator tokens.TokID", "Right Expr"}},
+		tools.StructStr{"Binary", []string{"Left Expr", "Operator tokens.Token", "Right Expr"}},
 		tools.StructStr{"Grouping", []string{"Expression Expr"}},
 		tools.StructStr{"Literal", []string{"Value interface{}"}},
-		tools.StructStr{"Unary", []string{"Operator tokens.TokID", "Right Expr"}},
+		tools.StructStr{"Unary", []string{"Operator tokens.Token", "Right Expr"}},
 	}
 
 	interfaces := []tools.InterfaceStr{
 		tools.InterfaceStr{
-			Name: "Acceptor",
+			Name: "Expr",
 			Sigs: []tools.FuncStr{
 				tools.FuncStr{
 					Name:   "Accept",
-					Params: []string{"v *Visitor"}},
+					Params: []string{"v Visitor"},
+					Return: []string{"interface{}"},
+				},
 			},
 		},
 		tools.InterfaceStr{
 			Name: "Visitor",
 			Sigs: []tools.FuncStr{
-				visitSig("ex", "Expr"),
 				visitSig("bi", "Binary"),
 				visitSig("gr", "Grouping"),
 				visitSig("li", "Literal"),
@@ -69,7 +71,6 @@ func main() {
 	}
 
 	methods := []tools.FuncStr{
-		acceptMethod("ex", "Expr"),
 		acceptMethod("bi", "Binary"),
 		acceptMethod("gr", "Grouping"),
 		acceptMethod("li", "Literal"),

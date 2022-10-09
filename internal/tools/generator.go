@@ -1,5 +1,4 @@
 // Package tools provides internal tools for development of GoWalkLox.
-
 package tools
 
 import (

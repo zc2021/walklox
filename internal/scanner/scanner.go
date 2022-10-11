@@ -27,16 +27,21 @@ func IsAlphaNumeric(r rune) bool {
 }
 
 type Scanner struct {
-	source []byte
-	toks   []*tokens.Token
-	srcLn  int
-	curIdx int
-	tokSt  int
-	accum  *reporters.Accumulator
+	source  []byte
+	toks    []*tokens.Token
+	srcLn   int
+	curIdx  int
+	tokSt   int
+	accum   *reporters.Accumulator
+	printer *reporters.PrettyPrinter
 }
 
 func New(src []byte, a *reporters.Accumulator) *Scanner {
 	return &Scanner{source: src, accum: a}
+}
+
+func (s *Scanner) AddPrinter(pp *reporters.PrettyPrinter) {
+	s.printer = pp
 }
 
 func (s *Scanner) lexeme() string {

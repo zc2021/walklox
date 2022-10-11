@@ -17,7 +17,7 @@ type Visitor interface {
 
 type Binary struct {
 	Left     Expr
-	Operator tokens.Token
+	Operator *tokens.Token
 	Right    Expr
 }
 
@@ -30,7 +30,7 @@ type Literal struct {
 }
 
 type Unary struct {
-	Operator tokens.Token
+	Operator *tokens.Token
 	Right    Expr
 }
 

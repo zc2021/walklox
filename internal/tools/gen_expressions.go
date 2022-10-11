@@ -42,10 +42,10 @@ func main() {
 	}
 
 	exprs := []tools.StructStr{
-		tools.StructStr{"Binary", []string{"Left Expr", "Operator tokens.Token", "Right Expr"}},
+		tools.StructStr{"Binary", []string{"Left Expr", "Operator *tokens.Token", "Right Expr"}},
 		tools.StructStr{"Grouping", []string{"Expression Expr"}},
 		tools.StructStr{"Literal", []string{"Value interface{}"}},
-		tools.StructStr{"Unary", []string{"Operator tokens.Token", "Right Expr"}},
+		tools.StructStr{"Unary", []string{"Operator *tokens.Token", "Right Expr"}},
 	}
 
 	interfaces := []tools.InterfaceStr{

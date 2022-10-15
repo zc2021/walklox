@@ -9,9 +9,9 @@ import (
 
 type PrettyPrinter struct{}
 
-func (pp *PrettyPrinter) Print(ex expressions.Expr) string {
+func (pp *PrettyPrinter) Print(ex expressions.Expr) {
 	stringVal := ex.Accept(pp).(string)
-	return stringVal
+	fmt.Println(stringVal)
 }
 
 func (pp *PrettyPrinter) VisitLiteral(li *expressions.Literal) interface{} {

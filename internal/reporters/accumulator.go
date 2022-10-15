@@ -63,6 +63,10 @@ func (a *Accumulator) HasErrors() bool {
 	return len(a.errors) > 0
 }
 
+func (a *Accumulator) ResetErrors() {
+	a.errors = []*loxError{}
+}
+
 func (a *Accumulator) PrintErrors() {
 	for _, err := range a.errors {
 		report(os.Stderr, err)

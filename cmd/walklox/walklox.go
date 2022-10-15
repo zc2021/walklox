@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"devZ/lox/internal/parser"
 	"devZ/lox/internal/reporters"
 	"devZ/lox/internal/scanner"
 )
@@ -48,14 +49,21 @@ func runPrompt(p string) {
 }
 
 func run(script []byte) {
-	accum := reporters.Accumulator{}
-	inpt := scanner.New(script, &accum)
+	accum := &reporters.Accumulator{}
+	inpt := scanner.New(script, accum)
 	toks := inpt.ScanTokens()
 	if accum.HasErrors() {
 		accum.PrintErrors()
+		accum.ResetErrors()
 		return
 	}
-	for _, tok := range toks {
-		fmt.Println(tok)
+	prs := parser.New(toks, accum)
+	expr := prs.Parse()
+	if accum.HasErrors() {
+		accum.PrintErrors()
+		accum.ResetErrors()
+		return
 	}
+	prs.Printer = &reporters.PrettyPrinter{}
+	prs.Printer.Print(expr)
 }

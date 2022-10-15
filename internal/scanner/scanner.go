@@ -165,9 +165,9 @@ func (s *Scanner) scanToken() {
 	switch c {
 	// grouping & closures
 	case '(':
-		s.addToken(tokens.RIGHT_PAREN, nil)
-	case ')':
 		s.addToken(tokens.LEFT_PAREN, nil)
+	case ')':
+		s.addToken(tokens.RIGHT_PAREN, nil)
 	case '{':
 		s.addToken(tokens.RIGHT_BRACE, nil)
 	case '}':

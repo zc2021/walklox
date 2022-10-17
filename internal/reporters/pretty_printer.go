@@ -15,10 +15,10 @@ func (pp *PrettyPrinter) Print(ex expressions.Expr) {
 }
 
 func (pp *PrettyPrinter) VisitLiteral(li *expressions.Literal) interface{} {
-	if li.Value == nil {
+	if li.Value() == nil {
 		return "null"
 	}
-	return fmt.Sprintf("%v", li.Value)
+	return fmt.Sprintf("%v", li.Value())
 }
 
 func (pp *PrettyPrinter) VisitBinary(bi *expressions.Binary) interface{} {

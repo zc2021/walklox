@@ -66,11 +66,7 @@ func (p *Parser) equality() expressions.Expr {
 	for p.match(tokens.BANG_EQUAL, tokens.EQUAL_EQUAL) {
 		op := p.previous()
 		nex := p.comparison()
-		ex = &expressions.Binary{
-			Left:     ex,
-			Operator: op,
-			Right:    nex,
-		}
+		ex = expressions.NewBinary(ex, op, nex)
 	}
 	return ex
 }
@@ -80,11 +76,7 @@ func (p *Parser) comparison() expressions.Expr {
 	for p.match(tokens.GREATER, tokens.GREATER_EQUAL, tokens.LESS, tokens.LESS_EQUAL) {
 		op := p.previous()
 		nex := p.term()
-		ex = &expressions.Binary{
-			Left:     ex,
-			Operator: op,
-			Right:    nex,
-		}
+		ex = expressions.NewBinary(ex, op, nex)
 	}
 	return ex
 }
@@ -94,11 +86,7 @@ func (p *Parser) term() expressions.Expr {
 	for p.match(tokens.MINUS, tokens.PLUS) {
 		op := p.previous()
 		nex := p.factor()
-		ex = &expressions.Binary{
-			Left:     ex,
-			Operator: op,
-			Right:    nex,
-		}
+		ex = expressions.NewBinary(ex, op, nex)
 	}
 	return ex
 }
@@ -108,11 +96,7 @@ func (p *Parser) factor() expressions.Expr {
 	for p.match(tokens.SLASH, tokens.STAR) {
 		op := p.previous()
 		nex := p.factor()
-		ex = &expressions.Binary{
-			Left:     ex,
-			Operator: op,
-			Right:    nex,
-		}
+		ex = expressions.NewBinary(ex, op, nex)
 	}
 	return ex
 }
@@ -121,26 +105,23 @@ func (p *Parser) unary() expressions.Expr {
 	if p.match(tokens.BANG, tokens.MINUS) {
 		op := p.previous()
 		right := p.unary()
-		return &expressions.Unary{
-			Operator: op,
-			Right:    right,
-		}
+		return expressions.NewUnary(op, right)
 	}
 	return p.primary()
 }
 
 func (p *Parser) primary() expressions.Expr {
 	if p.match(tokens.FALSE) {
-		return &expressions.Literal{Value: false}
+		return expressions.NewLiteral(false)
 	}
 	if p.match(tokens.TRUE) {
-		return &expressions.Literal{Value: true}
+		return expressions.NewLiteral(true)
 	}
 	if p.match(tokens.NIL) {
-		return &expressions.Literal{Value: nil}
+		return expressions.NewLiteral(nil)
 	}
 	if p.match(tokens.NUMBER, tokens.STRING) {
-		return &expressions.Literal{Value: p.previous().Literal()}
+		return expressions.NewLiteral(p.previous().Literal())
 	}
 	if p.match(tokens.LEFT_PAREN) {
 		ex := p.expression()

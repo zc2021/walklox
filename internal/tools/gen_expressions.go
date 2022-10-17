@@ -3,78 +3,92 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"devZ/lox/internal/tools"
 )
 
-func visitSig(param, acceptorStr string) tools.FuncStr {
-	casedAcceptor := tools.UpperString(acceptorStr)
-	name := fmt.Sprintf("Visit%s", casedAcceptor)
-	return tools.FuncStr{
-		Name: name,
-		Params: []string{
-			fmt.Sprintf("%s *%s", param, acceptorStr),
-		},
-		Return: []string{"interface{}"},
-	}
-}
-
-func acceptMethod(param, recStr string) tools.FuncStr {
-	casedAcceptor := tools.UpperString(recStr)
-	visitName := fmt.Sprintf("Visit%s", casedAcceptor)
-	return tools.FuncStr{
-		Name:     "Accept",
-		Receiver: fmt.Sprintf("%s *%s", param, recStr),
-		Params:   []string{"v Visitor"},
-		Body: []string{
-			fmt.Sprintf("return v.%s(%s)", visitName, param),
-		},
-		Return: []string{"interface{}"},
-	}
-}
-
 func main() {
-	f, err := os.Create("../expressions/expr_structs_ints.go")
-	if err != nil {
-		panic(err)
-	}
+	binary := tools.StructStr{
+		Name:  "Binary",
+		Param: "bi",
+		Fields: []tools.FieldStr{
+			tools.FieldStr{
+				Name:  "left",
+				Param: "lf",
+				Type:  "Expr"},
+			tools.FieldStr{
+				Name:  "operator",
+				Param: "op",
+				Type:  "*tokens.Token"},
+			tools.FieldStr{
+				Name:  "right",
+				Param: "rt",
+				Type:  "Expr"}}}
 
-	exprs := []tools.StructStr{
-		tools.StructStr{"Binary", []string{"Left Expr", "Operator *tokens.Token", "Right Expr"}},
-		tools.StructStr{"Grouping", []string{"Expression Expr"}},
-		tools.StructStr{"Literal", []string{"Value interface{}"}},
-		tools.StructStr{"Unary", []string{"Operator *tokens.Token", "Right Expr"}},
-	}
+	group := tools.StructStr{
+		Name:  "Grouping",
+		Param: "gr",
+		Fields: []tools.FieldStr{
+			tools.FieldStr{
+				Name:  "expression",
+				Param: "ex",
+				Type:  "Expr"}}}
 
-	interfaces := []tools.InterfaceStr{
-		tools.InterfaceStr{
-			Name: "Expr",
-			Sigs: []tools.FuncStr{
-				tools.FuncStr{
-					Name:   "Accept",
-					Params: []string{"v Visitor"},
-					Return: []string{"interface{}"},
-				},
+	literal := tools.StructStr{
+		Name:  "Literal",
+		Param: "li",
+		Fields: []tools.FieldStr{
+			tools.FieldStr{
+				Name:  "value",
+				Param: "val",
+				Type:  "interface{}"}}}
+
+	unary := tools.StructStr{
+		Name:  "Unary",
+		Param: "un",
+		Fields: []tools.FieldStr{
+			tools.FieldStr{
+				Name:  "operator",
+				Param: "op",
+				Type:  "*tokens.Token"},
+			tools.FieldStr{
+				Name:  "right",
+				Param: "rt",
+				Type:  "Expr"}}}
+
+	expression := tools.InterfaceStr{
+		Name: "Expr",
+		Sigs: []tools.FuncStr{
+			tools.FuncStr{
+				Name:   "Accept",
+				Params: []string{"v Visitor"},
+				Return: []string{"interface{}"},
 			},
 		},
-		tools.InterfaceStr{
-			Name: "Visitor",
-			Sigs: []tools.FuncStr{
-				visitSig("bi", "Binary"),
-				visitSig("gr", "Grouping"),
-				visitSig("li", "Literal"),
-				visitSig("un", "Unary"),
-			},
+	}
+
+	visitor := tools.InterfaceStr{
+		Name: "Visitor",
+		Sigs: []tools.FuncStr{
+			tools.VisitSig(&binary),
+			tools.VisitSig(&group),
+			tools.VisitSig(&literal),
+			tools.VisitSig(&unary),
 		},
 	}
 
-	methods := []tools.FuncStr{
-		acceptMethod("bi", "Binary"),
-		acceptMethod("gr", "Grouping"),
-		acceptMethod("li", "Literal"),
-		acceptMethod("un", "Unary"),
+	exprs := []tools.StructStr{binary, group, literal, unary}
+	interfaces := []tools.InterfaceStr{expression, visitor}
+
+	var methods []tools.FuncStr
+	var funcs []tools.FuncStr
+
+	for _, e := range exprs {
+		methods = append(methods, tools.AcceptMethod(&e))
+		methods = append(methods, tools.Getters(&e)...)
+		methods = append(methods, tools.Setters(&e)...)
+		funcs = append(funcs, tools.ConstructorFunc(&e))
 	}
 
 	pkgInfo := tools.PkgTemplateData{
@@ -82,7 +96,12 @@ func main() {
 		Structs:    exprs,
 		Interfaces: interfaces,
 		Methods:    methods,
+		Functions:  funcs,
 	}
 
+	f, err := os.Create("../expressions/expr_structs_ints.go")
+	if err != nil {
+		panic(err)
+	}
 	tools.GeneratePkgFile(f, &pkgInfo)
 }

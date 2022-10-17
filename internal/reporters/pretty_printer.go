@@ -22,15 +22,15 @@ func (pp *PrettyPrinter) VisitLiteral(li *expressions.Literal) interface{} {
 }
 
 func (pp *PrettyPrinter) VisitBinary(bi *expressions.Binary) interface{} {
-	return pp.parenthesize(bi.Operator.Lexeme(), bi.Left, bi.Right)
+	return pp.parenthesize(bi.Operator().Lexeme(), bi.Left(), bi.Right())
 }
 
 func (pp *PrettyPrinter) VisitGrouping(gr *expressions.Grouping) interface{} {
-	return pp.parenthesize("group", gr.Expression)
+	return pp.parenthesize("group", gr.Expression())
 }
 
 func (pp *PrettyPrinter) VisitUnary(un *expressions.Unary) interface{} {
-	return pp.parenthesize(un.Operator.Lexeme(), un.Right)
+	return pp.parenthesize(un.Operator().Lexeme(), un.Right())
 }
 
 func (pp *PrettyPrinter) parenthesize(name string, exprs ...expressions.Expr) interface{} {

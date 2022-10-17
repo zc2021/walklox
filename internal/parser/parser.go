@@ -173,7 +173,8 @@ func (p *Parser) synchronize() {
 			return
 		}
 		switch p.peek().ID() {
-		case tokens.CLASS, tokens.FUN, tokens.VAR, tokens.FOR, tokens.IF, tokens.WHILE, tokens.PRINT, tokens.RETURN:
+		case tokens.CLASS, tokens.FUN, tokens.VAR, tokens.FOR, tokens.IF,
+			tokens.WHILE, tokens.PRINT, tokens.RETURN:
 			return
 		}
 		p.advance()

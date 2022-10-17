@@ -16,36 +16,119 @@ type Visitor interface {
 }
 
 type Binary struct {
-	Left     Expr
-	Operator *tokens.Token
-	Right    Expr
+	left     Expr
+	operator *tokens.Token
+	right    Expr
 }
 
 type Grouping struct {
-	Expression Expr
+	expression Expr
 }
 
 type Literal struct {
-	Value interface{}
+	value interface{}
 }
 
 type Unary struct {
-	Operator *tokens.Token
-	Right    Expr
+	operator *tokens.Token
+	right    Expr
 }
 
 func (bi *Binary) Accept(v Visitor) interface{} {
 	return v.VisitBinary(bi)
 }
 
+func (bi *Binary) Left() Expr {
+	return bi.left
+}
+
+func (bi *Binary) Operator() *tokens.Token {
+	return bi.operator
+}
+
+func (bi *Binary) Right() Expr {
+	return bi.right
+}
+
+func (bi *Binary) SetLeft(lf Expr) {
+	bi.left = lf
+}
+
+func (bi *Binary) SetOperator(op *tokens.Token) {
+	bi.operator = op
+}
+
+func (bi *Binary) SetRight(rt Expr) {
+	bi.right = rt
+}
+
 func (gr *Grouping) Accept(v Visitor) interface{} {
 	return v.VisitGrouping(gr)
+}
+
+func (gr *Grouping) Expression() Expr {
+	return gr.expression
+}
+
+func (gr *Grouping) SetExpression(ex Expr) {
+	gr.expression = ex
 }
 
 func (li *Literal) Accept(v Visitor) interface{} {
 	return v.VisitLiteral(li)
 }
 
+func (li *Literal) Value() interface{} {
+	return li.value
+}
+
+func (li *Literal) SetValue(val interface{}) {
+	li.value = val
+}
+
 func (un *Unary) Accept(v Visitor) interface{} {
 	return v.VisitUnary(un)
+}
+
+func (un *Unary) Operator() *tokens.Token {
+	return un.operator
+}
+
+func (un *Unary) Right() Expr {
+	return un.right
+}
+
+func (un *Unary) SetOperator(op *tokens.Token) {
+	un.operator = op
+}
+
+func (un *Unary) SetRight(rt Expr) {
+	un.right = rt
+}
+
+func NewBinary(lf Expr, op *tokens.Token, rt Expr) *Binary {
+	return &Binary{
+		left:     lf,
+		operator: op,
+		right:    rt,
+	}
+}
+
+func NewGrouping(ex Expr) *Grouping {
+	return &Grouping{
+		expression: ex,
+	}
+}
+
+func NewLiteral(val interface{}) *Literal {
+	return &Literal{
+		value: val,
+	}
+}
+
+func NewUnary(op *tokens.Token, rt Expr) *Unary {
+	return &Unary{
+		operator: op,
+		right:    rt,
+	}
 }

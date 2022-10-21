@@ -31,10 +31,8 @@ func stringify(val interface{}) string {
 		return "nil"
 	}
 	switch t := val.(type) {
-	case string:
-		return val.(string)
-	case float64:
-		return fmt.Sprintf("%g", val.(float64))
+	case string, bool, float64:
+		return fmt.Sprintf("%v", val)
 	default:
 		return fmt.Sprintf("Cannot interpret %s", t)
 	}

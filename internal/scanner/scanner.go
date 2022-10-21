@@ -83,8 +83,8 @@ func (s *Scanner) string() {
 	for s.peek() != '"' && !s.isAtEnd() {
 		if bytes.ContainsRune(newLines, s.peek()) {
 			s.srcLn++
-			s.advance()
 		}
+		s.advance()
 	}
 	// if you hit the end of the source, something's missing
 	if s.isAtEnd() {

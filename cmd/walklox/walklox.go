@@ -63,9 +63,7 @@ func run(script []byte) {
 	}
 	intpr := interpreter.New(accum)
 	intpr.Interpret(expr)
-	if checkErrs(accum) {
-		return
-	}
+	checkErrs(accum)
 }
 
 func checkErrs(a *reporters.Accumulator) bool {

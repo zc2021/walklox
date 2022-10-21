@@ -232,6 +232,14 @@ func lessEq(x, y interface{}) interface{} {
 	return x.(float64) <= y.(float64)
 }
 
+func checkVal[T any](y interface{}) interface{} {
+	yt, ok := y.(T)
+	if !ok {
+		return nil
+	}
+	return yt
+}
+
 func equal(x, y interface{}) interface{} {
 	if x == nil && y == nil {
 		return true
@@ -239,7 +247,25 @@ func equal(x, y interface{}) interface{} {
 	if x == nil || y == nil {
 		return false
 	}
-	return x == y
+	var yt interface{}
+	switch x.(type) {
+	case bool:
+		yt = checkVal[bool](y)
+	case float64:
+		yt = checkVal[float64](y)
+	case string:
+		yt = checkVal[string](y)
+	default:
+		return false
+	}
+	if yt == nil {
+		return false
+	}
+	return yt == x
+}
+
+func notEqual(x, y interface{}) interface{} {
+	return !equal(x, y).(bool)
 }
 
 var binaryFuncs = map[TokID]biFunc{
@@ -251,6 +277,8 @@ var binaryFuncs = map[TokID]biFunc{
 	LESS:          less,
 	GREATER_EQUAL: greaterEq,
 	LESS_EQUAL:    lessEq,
+	EQUAL_EQUAL:   equal,
+	BANG_EQUAL:    notEqual,
 }
 
 type unFunc func(x interface{}) interface{}

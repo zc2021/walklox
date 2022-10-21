@@ -15,7 +15,7 @@ type Accumulator struct {
 type loxError struct {
 	line    int
 	message string
-	Context ErrCtx
+	context ErrCtx
 }
 
 type ErrCtx int
@@ -48,7 +48,7 @@ func (lc loxComment) String() string {
 }
 
 func (a *Accumulator) AddError(ln int, msg string, ctx ErrCtx) error {
-	err := loxError{line: ln, message: msg}
+	err := loxError{line: ln, message: msg, context: ctx}
 	return a.add(err)
 }
 

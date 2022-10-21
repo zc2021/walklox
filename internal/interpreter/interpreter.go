@@ -7,6 +7,8 @@ import (
 	"fmt"
 )
 
+const CTX = reporters.INTERPRETING
+
 type Interpreter struct {
 	accum   *reporters.Accumulator
 	Printer *reporters.PrettyPrinter
@@ -94,7 +96,7 @@ func (i *Interpreter) evaluate(e expressions.Expr) interface{} {
 func (i *Interpreter) checkNum(x interface{}, loc int, msg string) (float64, bool) {
 	n, ok := x.(float64)
 	if !ok {
-		i.accum.AddError(loc, msg)
+		i.accum.AddError(loc, msg, CTX)
 		return -1, false
 	}
 	return n, true
@@ -103,7 +105,7 @@ func (i *Interpreter) checkNum(x interface{}, loc int, msg string) (float64, boo
 func (i *Interpreter) checkStr(x interface{}, loc int, msg string) (string, bool) {
 	s, ok := x.(string)
 	if !ok {
-		i.accum.AddError(loc, msg)
+		i.accum.AddError(loc, msg, CTX)
 		return "", false
 	}
 	return s, true

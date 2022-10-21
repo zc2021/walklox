@@ -9,6 +9,8 @@ import (
 	"devZ/lox/internal/tokens"
 )
 
+const CTX = reporters.SCANNING
+
 var newLines = []byte{10, 11, 12, 13, 133}
 
 func IsWesternDigit(r rune) bool {
@@ -88,7 +90,7 @@ func (s *Scanner) string() {
 	}
 	// if you hit the end of the source, something's missing
 	if s.isAtEnd() {
-		s.accum.AddError(s.srcLn, "Unterminated string.")
+		s.accum.AddError(s.srcLn, "Unterminated string.", CTX)
 	}
 	// consume the terminating quote
 	s.advance()
@@ -214,7 +216,7 @@ func (s *Scanner) scanToken() {
 		} else if IsEnglishAlpha(c) {
 			s.identifier()
 		} else {
-			s.accum.AddError(s.srcLn, "Unexpected character.")
+			s.accum.AddError(s.srcLn, "Unexpected character.", CTX)
 		}
 	}
 }

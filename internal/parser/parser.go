@@ -6,6 +6,8 @@ import (
 	"devZ/lox/internal/tokens"
 )
 
+const CTX = reporters.PARSING
+
 type Parser struct {
 	tokens  []*tokens.Token
 	current int
@@ -141,7 +143,7 @@ func (p *Parser) consume(tid tokens.TokID, msg string) *tokens.Token {
 }
 
 func (p *Parser) error(msg string) {
-	p.accum.AddError(p.peek().Line(), msg)
+	p.accum.AddError(p.peek().Line(), msg, CTX)
 	if !p.isAtEnd() {
 		p.synchronize()
 	}

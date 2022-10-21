@@ -8,12 +8,11 @@ package tokens
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 )
 
 type TokID int
-
-//go:generate stringer -type=TokID
 
 const (
 	EOF TokID = iota
@@ -177,4 +176,105 @@ func (t *Token) String() string {
 		s = "token (" + strconv.Itoa(int(t.ID())) + ")"
 	}
 	return s
+}
+
+func (t *Token) SetBiFunc() {
+	t.literal = binaryFuncs[t.id]
+}
+
+func (t *Token) BiFunc(x, y interface{}) interface{} {
+	return t.literal.(biFunc)(x, y)
+}
+
+func (t *Token) SetUnFunc() {
+	t.literal = unaryFuncs[t.id]
+}
+
+func (t *Token) UnFunc(x interface{}) interface{} {
+	return t.literal.(unFunc)(x)
+}
+
+type biFunc func(x, y interface{}) interface{}
+
+func add(x, y interface{}) interface{} {
+	n, isNum := x.(float64)
+	if !isNum {
+		return fmt.Sprintf("%s%s", x.(string), y.(string))
+	}
+	return n + y.(float64)
+}
+
+func subtract(x, y interface{}) interface{} {
+	return x.(float64) - y.(float64)
+}
+
+func divide(x, y interface{}) interface{} {
+	return x.(float64) / y.(float64)
+}
+
+func multiply(x, y interface{}) interface{} {
+	return x.(float64) * y.(float64)
+}
+
+func greater(x, y interface{}) interface{} {
+	return x.(float64) > y.(float64)
+}
+
+func less(x, y interface{}) interface{} {
+	return x.(float64) < y.(float64)
+}
+
+func greaterEq(x, y interface{}) interface{} {
+	return x.(float64) >= y.(float64)
+}
+
+func lessEq(x, y interface{}) interface{} {
+	return x.(float64) <= y.(float64)
+}
+
+func equal(x, y interface{}) interface{} {
+	if x == nil && y == nil {
+		return true
+	}
+	if x == nil || y == nil {
+		return false
+	}
+	return x == y
+}
+
+var binaryFuncs = map[TokID]biFunc{
+	PLUS:          add,
+	MINUS:         subtract,
+	SLASH:         divide,
+	STAR:          multiply,
+	GREATER:       greater,
+	LESS:          less,
+	GREATER_EQUAL: greaterEq,
+	LESS_EQUAL:    lessEq,
+}
+
+type unFunc func(x interface{}) interface{}
+
+func isTruthy(x interface{}) interface{} {
+	if x == nil {
+		return false
+	}
+	xb, ok := x.(bool)
+	if !ok {
+		return true
+	}
+	return xb
+}
+
+func isNotTruthy(x interface{}) interface{} {
+	return !isTruthy(x).(bool)
+}
+
+func negate(x interface{}) interface{} {
+	return -1 * x.(float64)
+}
+
+var unaryFuncs = map[TokID]unFunc{
+	MINUS: negate,
+	BANG:  isNotTruthy,
 }

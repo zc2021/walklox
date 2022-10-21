@@ -24,7 +24,8 @@ func main() {
 			tools.FieldStr{
 				Name:  "right",
 				Param: "rt",
-				Type:  "Expr"}}}
+				Type:  "Expr"}},
+		CnstBd: []string{"op.SetBiFunc()"}}
 
 	group := tools.StructStr{
 		Name:  "Grouping",
@@ -55,7 +56,8 @@ func main() {
 			tools.FieldStr{
 				Name:  "right",
 				Param: "rt",
-				Type:  "Expr"}}}
+				Type:  "Expr"}},
+		CnstBd: []string{"op.SetUnFunc()"}}
 
 	expression := tools.InterfaceStr{
 		Name: "Expr",

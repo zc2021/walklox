@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"devZ/lox/internal/interpreter"
 	"devZ/lox/internal/parser"
 	"devZ/lox/internal/reporters"
 	"devZ/lox/internal/scanner"
@@ -52,18 +53,26 @@ func run(script []byte) {
 	accum := &reporters.Accumulator{}
 	inpt := scanner.New(script, accum)
 	toks := inpt.ScanTokens()
-	if accum.HasErrors() {
-		accum.PrintErrors()
-		accum.ResetErrors()
+	if checkErrs(accum) {
 		return
 	}
 	prs := parser.New(toks, accum)
 	expr := prs.Parse()
-	if accum.HasErrors() {
-		accum.PrintErrors()
-		accum.ResetErrors()
+	if checkErrs(accum) {
 		return
 	}
-	prs.Printer = &reporters.PrettyPrinter{}
-	prs.Printer.Print(expr)
+	intpr := interpreter.New(accum)
+	intpr.Interpret(expr)
+	if checkErrs(accum) {
+		return
+	}
+}
+
+func checkErrs(a *reporters.Accumulator) bool {
+	if a.HasErrors() {
+		a.PrintErrors()
+		a.ResetErrors()
+		return true
+	}
+	return false
 }

@@ -17,6 +17,9 @@ func ConstructorFunc(ss *StructStr) FuncStr {
 	newName := fmt.Sprintf("New%s", casedStruct)
 	pms := make([]string, len(ss.Fields))
 	var bld strings.Builder
+	for _, str := range ss.CnstBd {
+		bld.WriteString(fmt.Sprintf("%s\n", str))
+	}
 	bld.WriteString(fmt.Sprintf("return &%s{\n", ss.Name))
 	for i, field := range ss.Fields {
 		pms[i] = fmt.Sprintf("%s %s", field.Param, field.Type)

@@ -107,6 +107,7 @@ func (un *Unary) SetRight(rt Expr) {
 }
 
 func NewBinary(lf Expr, op *tokens.Token, rt Expr) *Binary {
+	op.SetBiFunc()
 	return &Binary{
 		left:     lf,
 		operator: op,
@@ -127,6 +128,7 @@ func NewLiteral(val interface{}) *Literal {
 }
 
 func NewUnary(op *tokens.Token, rt Expr) *Unary {
+	op.SetUnFunc()
 	return &Unary{
 		operator: op,
 		right:    rt,

@@ -27,6 +27,7 @@ type StructStr struct {
 	Name   string
 	Param  string
 	Fields []FieldStr
+	CnstBd []string
 }
 
 type FieldStr struct {

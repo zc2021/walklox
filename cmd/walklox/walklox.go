@@ -16,61 +16,69 @@ func main() {
 	numArgs := len(args)
 	if numArgs > 1 {
 		fmt.Println("Usage: walklox [script]")
-		os.Exit(64)
+		os.Exit(int(reporters.COMMAND))
 	}
 	if numArgs == 1 {
-		runFile(args[0])
-		os.Exit(0)
+		ec := runFile(args[0])
+		os.Exit(ec)
 	}
-	runPrompt("> ")
-	os.Exit(0)
+	ec := runPrompt("> ")
+	os.Exit(ec)
 }
 
-func runFile(filePath string) {
+func runFile(filePath string) int {
 	script, err := os.ReadFile(filePath)
 	if err != nil {
-		panic(err)
+		return int(reporters.FILE)
 	}
-	run(script)
+	return run(script)
 }
 
-func runPrompt(p string) {
+func runPrompt(p string) int {
 	input := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Print(p)
 		line, err := input.ReadBytes('\n')
+		if string(line) == "bye!\n" {
+			break
+		}
 		if err != nil {
-			panic(err)
+			return int(reporters.REPL)
 		}
 		if line == nil {
 			break
 		}
 		run(line)
 	}
+	return int(reporters.SUCCESS)
 }
 
-func run(script []byte) {
+func run(script []byte) int {
 	accum := &reporters.Accumulator{}
 	inpt := scanner.New(script, accum)
 	toks := inpt.ScanTokens()
-	if checkErrs(accum) {
-		return
+	if e := checkErrs(accum); e != nil {
+		return int(reporters.SCANNING)
 	}
 	prs := parser.New(toks, accum)
 	expr := prs.Parse()
-	if checkErrs(accum) {
-		return
+	if checkErrs(accum) != nil {
+		return int(reporters.PARSING)
 	}
 	intpr := interpreter.New(accum)
 	intpr.Interpret(expr)
-	checkErrs(accum)
+	if checkErrs(accum) != nil {
+		return int(reporters.INTERPRETING)
+	}
+	return 0
 }
 
-func checkErrs(a *reporters.Accumulator) bool {
+func checkErrs(a *reporters.Accumulator) error {
 	if a.HasErrors() {
+		err := a.LastError()
 		a.PrintErrors()
 		a.ResetErrors()
-		return true
+		return err
 	}
-	return false
+	return nil
 }

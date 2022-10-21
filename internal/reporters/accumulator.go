@@ -15,15 +15,19 @@ type Accumulator struct {
 type loxError struct {
 	line    int
 	message string
-	context ErrCtx
+	Context ErrCtx
 }
 
 type ErrCtx int
 
 const (
-	SCANNING ErrCtx = iota
-	PARSING
-	INTERPRETING
+	SUCCESS      ErrCtx = 0
+	COMMAND      ErrCtx = 64
+	FILE         ErrCtx = 66
+	REPL         ErrCtx = 74
+	SCANNING     ErrCtx = 65
+	PARSING      ErrCtx = 65
+	INTERPRETING ErrCtx = 70
 )
 
 type loxComment struct {
@@ -35,8 +39,8 @@ func (le loxError) String() string {
 	return fmt.Sprintf("[line %d] Error: %s", le.line, le.message)
 }
 
-func (le loxError) Error() error {
-	return fmt.Errorf("[line %d] Error: %s", le.line, le.message)
+func (le loxError) Error() string {
+	return fmt.Sprintf("[line %d] Error: %s", le.line, le.message)
 }
 
 func (lc loxComment) String() string {
@@ -70,6 +74,10 @@ func (a *Accumulator) add(item interface{}) error {
 
 func (a *Accumulator) HasErrors() bool {
 	return len(a.errors) > 0
+}
+
+func (a *Accumulator) LastError() error {
+	return a.errors[len(a.errors)-1]
 }
 
 func (a *Accumulator) ResetErrors() {

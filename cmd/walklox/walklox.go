@@ -57,7 +57,7 @@ func run(script []byte) int {
 	accum := &reporters.Accumulator{}
 	inpt := scanner.New(script, accum)
 	toks := inpt.ScanTokens()
-	if e := checkErrs(accum); e != nil {
+	if checkErrs(accum) != nil {
 		return int(reporters.SCANNING)
 	}
 	prs := parser.New(toks, accum)

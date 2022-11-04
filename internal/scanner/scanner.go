@@ -128,7 +128,7 @@ func (s *Scanner) identifier() {
 	s.addToken(tid, nil)
 }
 
-func (s *Scanner) checkEquals(short, long tokens.TokID) {
+func (s *Scanner) checkEquals(short, long tokens.TokenType) {
 	if s.match('=') {
 		s.addToken(long, nil)
 	} else {
@@ -152,7 +152,7 @@ func (s *Scanner) isAtEnd() bool {
 	return s.curIdx >= len(s.source)
 }
 
-func (s *Scanner) addToken(tid tokens.TokID, obj interface{}) {
+func (s *Scanner) addToken(tid tokens.TokenType, obj interface{}) {
 	tok, err := tokens.New(tid, s.lexeme(), s.srcLn, obj)
 	if err != nil {
 		panic(err)

@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+	bibod := "op.SetBiFunc()"
 	binary := tools.StructStr{
 		Name:  "Binary",
 		Param: "bi",
@@ -16,16 +17,22 @@ func main() {
 			tools.FieldStr{
 				Name:  "left",
 				Param: "lf",
-				Type:  "Expr"},
+				Type:  "Expr",
+			},
 			tools.FieldStr{
 				Name:  "operator",
 				Param: "op",
-				Type:  "*tokens.Token"},
+				Type:  "*tokens.Token",
+				SetBd: []string{bibod},
+			},
 			tools.FieldStr{
 				Name:  "right",
 				Param: "rt",
-				Type:  "Expr"}},
-		CnstBd: []string{"op.SetBiFunc()"}}
+				Type:  "Expr",
+			},
+		},
+		CnstBd: []string{bibod},
+	}
 
 	group := tools.StructStr{
 		Name:  "Grouping",
@@ -45,6 +52,7 @@ func main() {
 				Param: "val",
 				Type:  "interface{}"}}}
 
+	unbod := "op.SetUnFunc()"
 	unary := tools.StructStr{
 		Name:  "Unary",
 		Param: "un",
@@ -52,12 +60,13 @@ func main() {
 			tools.FieldStr{
 				Name:  "operator",
 				Param: "op",
-				Type:  "*tokens.Token"},
+				Type:  "*tokens.Token",
+				SetBd: []string{unbod}},
 			tools.FieldStr{
 				Name:  "right",
 				Param: "rt",
 				Type:  "Expr"}},
-		CnstBd: []string{"op.SetUnFunc()"}}
+		CnstBd: []string{unbod}}
 
 	expression := tools.InterfaceStr{
 		Name: "Expr",
@@ -70,32 +79,31 @@ func main() {
 		},
 	}
 
+	strcs := []tools.StructStr{binary, group, literal, unary}
+
+	var methods, funcs, visitSigs []tools.FuncStr
+
+	av_void := false
+
+	for _, s := range strcs {
+		methods = append(methods, tools.AcceptMethod(&s, av_void))
+		methods = append(methods, tools.Getters(&s)...)
+		methods = append(methods, tools.Setters(&s)...)
+		funcs = append(funcs, tools.ConstructorFunc(&s))
+		visitSigs = append(visitSigs, tools.VisitSig(&s, av_void))
+	}
+
 	visitor := tools.InterfaceStr{
 		Name: "Visitor",
-		Sigs: []tools.FuncStr{
-			tools.VisitSig(&binary),
-			tools.VisitSig(&group),
-			tools.VisitSig(&literal),
-			tools.VisitSig(&unary),
-		},
+		Sigs: visitSigs,
 	}
 
-	exprs := []tools.StructStr{binary, group, literal, unary}
 	interfaces := []tools.InterfaceStr{expression, visitor}
-
-	var methods []tools.FuncStr
-	var funcs []tools.FuncStr
-
-	for _, e := range exprs {
-		methods = append(methods, tools.AcceptMethod(&e))
-		methods = append(methods, tools.Getters(&e)...)
-		methods = append(methods, tools.Setters(&e)...)
-		funcs = append(funcs, tools.ConstructorFunc(&e))
-	}
 
 	pkgInfo := tools.PkgTemplateData{
 		Package:    "expressions",
-		Structs:    exprs,
+		Imports:    []string{"devZ/lox/internal/tokens"},
+		Structs:    strcs,
 		Interfaces: interfaces,
 		Methods:    methods,
 		Functions:  funcs,

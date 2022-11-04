@@ -37,11 +37,16 @@ func ConstructorFunc(ss *StructStr) FuncStr {
 func Setters(ss *StructStr) []FuncStr {
 	strs := make([]FuncStr, len(ss.Fields))
 	for i, field := range ss.Fields {
+		var bld strings.Builder
+		for _, str := range field.SetBd {
+			bld.WriteString(fmt.Sprintf("%s\n", str))
+		}
+		bld.WriteString(fmt.Sprintf("%s.%s = %s", ss.Param, field.Name, field.Param))
 		strs[i] = FuncStr{
 			Name:     fmt.Sprintf("Set%s", UpperString(field.Name)),
 			Receiver: fmt.Sprintf("%s *%s", ss.Param, ss.Name),
 			Params:   []string{fmt.Sprintf("%s %s", field.Param, field.Type)},
-			Body:     fmt.Sprintf("%s.%s = %s", ss.Param, field.Name, field.Param),
+			Body:     bld.String(),
 		}
 	}
 	return strs
@@ -60,26 +65,36 @@ func Getters(ss *StructStr) []FuncStr {
 	return gtrs
 }
 
-func VisitSig(ss *StructStr) FuncStr {
+func VisitSig(ss *StructStr, void bool) FuncStr {
 	casedAcceptor := UpperString(ss.Name)
 	name := fmt.Sprintf("Visit%s", casedAcceptor)
+	retstr := "interface{}"
+	if void {
+		retstr = ""
+	}
 	return FuncStr{
 		Name: name,
 		Params: []string{
 			fmt.Sprintf("%s *%s", ss.Param, ss.Name),
 		},
-		Return: []string{"interface{}"},
+		Return: []string{retstr},
 	}
 }
 
-func AcceptMethod(ss *StructStr) FuncStr {
+func AcceptMethod(ss *StructStr, void bool) FuncStr {
+	bdfmt := "return v.%s(%s)"
+	retstr := "interface{}"
+	if void {
+		bdfmt = "v.%s(%s)"
+		retstr = ""
+	}
 	casedAcceptor := UpperString(ss.Name)
 	visitName := fmt.Sprintf("Visit%s", casedAcceptor)
 	return FuncStr{
 		Name:     "Accept",
 		Receiver: fmt.Sprintf("%s *%s", ss.Param, ss.Name),
 		Params:   []string{"v Visitor"},
-		Body:     fmt.Sprintf("return v.%s(%s)", visitName, ss.Param),
-		Return:   []string{"interface{}"},
+		Body:     fmt.Sprintf(bdfmt, visitName, ss.Param),
+		Return:   []string{retstr},
 	}
 }

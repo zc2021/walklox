@@ -2,7 +2,9 @@
 
 package expressions
 
-import "devZ/lox/internal/tokens"
+import (
+	"devZ/lox/internal/tokens"
+)
 
 type Expr interface {
 	Accept(v Visitor) interface{}
@@ -55,6 +57,7 @@ func (bi *Binary) SetLeft(lf Expr) {
 }
 
 func (bi *Binary) SetOperator(op *tokens.Token) {
+	op.SetBiFunc()
 	bi.operator = op
 }
 
@@ -99,6 +102,7 @@ func (un *Unary) Right() Expr {
 }
 
 func (un *Unary) SetOperator(op *tokens.Token) {
+	op.SetUnFunc()
 	un.operator = op
 }
 

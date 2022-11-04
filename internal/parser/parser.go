@@ -3,6 +3,7 @@ package parser
 import (
 	"devZ/lox/internal/expressions"
 	"devZ/lox/internal/reporters"
+	"devZ/lox/internal/statements"
 	"devZ/lox/internal/tokens"
 )
 
@@ -19,8 +20,31 @@ func New(tks []*tokens.Token, a *reporters.Accumulator) *Parser {
 	return &Parser{tokens: tks, accum: a, current: 0}
 }
 
-func (p *Parser) Parse() expressions.Expr {
-	return p.expression()
+func (p *Parser) Parse() []statements.Stmt {
+	stmts := make([]statements.Stmt, 0)
+	for !p.isAtEnd() {
+		stmts = append(stmts, p.statement())
+	}
+	return stmts
+}
+
+func (p *Parser) statement() statements.Stmt {
+	if p.match(tokens.PRINT) {
+		return p.printStatement()
+	}
+	return p.exprStatement()
+}
+
+func (p *Parser) printStatement() statements.Stmt {
+	expr := p.expression()
+	p.consume(tokens.SEMICOLON, "Expect ';' after value.")
+	return statements.NewPrint(expr)
+}
+
+func (p *Parser) exprStatement() statements.Stmt {
+	expr := p.expression()
+	p.consume(tokens.SEMICOLON, "Expect ';' after value.")
+	return statements.NewExpression(expr)
 }
 
 func (p *Parser) isAtEnd() bool {
@@ -42,14 +66,14 @@ func (p *Parser) advance() *tokens.Token {
 	return p.previous()
 }
 
-func (p *Parser) check(tid tokens.TokID) bool {
+func (p *Parser) check(tid tokens.TokenType) bool {
 	if p.isAtEnd() {
 		return false
 	}
 	return p.peek().ID() == tid
 }
 
-func (p *Parser) match(tids ...tokens.TokID) bool {
+func (p *Parser) match(tids ...tokens.TokenType) bool {
 	for _, tid := range tids {
 		if p.check(tid) {
 			p.advance()
@@ -134,7 +158,7 @@ func (p *Parser) primary() expressions.Expr {
 	return nil
 }
 
-func (p *Parser) consume(tid tokens.TokID, msg string) *tokens.Token {
+func (p *Parser) consume(tid tokens.TokenType, msg string) *tokens.Token {
 	if p.check(tid) {
 		return p.advance()
 	}

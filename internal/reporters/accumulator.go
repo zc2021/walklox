@@ -1,3 +1,5 @@
+// Package reporters contains utilities for debugging and tracking errors
+// while scanning, parsing, and interpreting Lox code.
 package reporters
 
 import (
@@ -23,8 +25,8 @@ type ErrCtx int
 const (
 	SUCCESS      ErrCtx = 0
 	COMMAND      ErrCtx = 64
-	FILE         ErrCtx = 66
-	REPL         ErrCtx = 74
+	FILE         ErrCtx = 74
+	REPL         ErrCtx = 65
 	SCANNING     ErrCtx = 65
 	PARSING      ErrCtx = 65
 	INTERPRETING ErrCtx = 70

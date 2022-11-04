@@ -16,7 +16,8 @@ func main() {
 	numArgs := len(args)
 	if numArgs > 1 {
 		fmt.Println("Usage: walklox [script]")
-		os.Exit(int(reporters.COMMAND))
+		ec := int(reporters.COMMAND)
+		os.Exit(ec)
 	}
 	if numArgs == 1 {
 		ec := runFile(args[0])
@@ -58,17 +59,17 @@ func run(script []byte) int {
 	inpt := scanner.New(script, accum)
 	toks := inpt.ScanTokens()
 	if checkErrs(accum) != nil {
-		return int(reporters.SCANNING)
+		return int(scanner.CTX)
 	}
 	prs := parser.New(toks, accum)
-	expr := prs.Parse()
+	stmts := prs.Parse()
 	if checkErrs(accum) != nil {
-		return int(reporters.PARSING)
+		return int(parser.CTX)
 	}
 	intpr := interpreter.New(accum)
-	intpr.Interpret(expr)
+	intpr.Interpret(stmts)
 	if checkErrs(accum) != nil {
-		return int(reporters.INTERPRETING)
+		return int(interpreter.CTX)
 	}
 	return 0
 }

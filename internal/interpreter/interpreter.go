@@ -3,6 +3,7 @@ package interpreter
 import (
 	"devZ/lox/internal/expressions"
 	"devZ/lox/internal/reporters"
+	"devZ/lox/internal/statements"
 	"devZ/lox/internal/tokens"
 	"fmt"
 )
@@ -20,12 +21,13 @@ func New(a *reporters.Accumulator) *Interpreter {
 	}
 }
 
-func (i *Interpreter) Interpret(e expressions.Expr) {
-	val := i.evaluate(e)
-	if i.accum.HasErrors() {
-		return
+func (i *Interpreter) Interpret(stmts []statements.Stmt) {
+	for _, s := range stmts {
+		i.execute(s)
+		if i.accum.HasErrors() {
+			return
+		}
 	}
-	fmt.Println(stringify(val))
 }
 
 func stringify(val interface{}) string {
@@ -40,13 +42,17 @@ func stringify(val interface{}) string {
 	}
 }
 
+func biMsg(tp, loc string, val *tokens.Token) string {
+	return fmt.Sprintf("Expect a %s %s %s", tp, loc, val)
+}
+
 func (i *Interpreter) VisitBinary(bi *expressions.Binary) interface{} {
 	lf := i.evaluate(bi.Left())
 	rt := i.evaluate(bi.Right())
 	opLoc := bi.Operator().Line()
-	lfMsgNum := fmt.Sprintf("Expect a number before %s", bi.Operator())
-	rtMsgNum := fmt.Sprintf("Expect a number after %s", bi.Operator())
-	rtMsgStr := fmt.Sprintf("Expect a string after %s", bi.Operator())
+	lfMsgNum := biMsg("number", "before", bi.Operator())
+	rtMsgNum := biMsg("number", "after", bi.Operator())
+	rtMsgStr := biMsg("string", "after", bi.Operator())
 	if bi.Operator().ID() == tokens.PLUS {
 		lstr, ok := lf.(string)
 		if ok {
@@ -91,6 +97,19 @@ func (i *Interpreter) VisitUnary(un *expressions.Unary) interface{} {
 
 func (i *Interpreter) evaluate(e expressions.Expr) interface{} {
 	return e.Accept(i)
+}
+
+func (i *Interpreter) execute(s statements.Stmt) {
+	s.Accept(i)
+}
+
+func (i *Interpreter) VisitExpression(expst *statements.Expression) {
+	i.evaluate(expst.Expression())
+}
+
+func (i *Interpreter) VisitPrint(prnst *statements.Print) {
+	val := i.evaluate(prnst.Expression())
+	fmt.Println(stringify(val))
 }
 
 func (i *Interpreter) checkNum(x interface{}, loc int, msg string) (float64, bool) {

@@ -34,4 +34,5 @@ type FieldStr struct {
 	Name  string
 	Param string
 	Type  string
+	SetBd []string
 }

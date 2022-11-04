@@ -12,10 +12,10 @@ import (
 	"strconv"
 )
 
-type TokID int
+type TokenType int
 
 const (
-	EOF TokID = iota
+	EOF TokenType = iota
 
 	begin_single_char_toks
 	LEFT_PAREN  // (
@@ -114,7 +114,7 @@ var tokens = [...]string{
 	WHILE:  "WHILE",
 }
 
-var Keywords = map[string]TokID{
+var Keywords = map[string]TokenType{
 	"and":    AND,
 	"class":  CLASS,
 	"else":   ELSE,
@@ -133,26 +133,26 @@ var Keywords = map[string]TokID{
 	"while":  WHILE,
 }
 
-func (tid TokID) Valid() bool {
-	return tid >= 0 && tid < TokID(len(tokens))
+func (tid TokenType) Valid() bool {
+	return tid >= 0 && tid < TokenType(len(tokens))
 }
 
 type Token struct {
-	id      TokID // TokenType in Crafting Interpreters
+	tp      TokenType
 	lexeme  string
 	line    int
 	literal interface{}
 }
 
-func New(tid TokID, lex string, loc int, obj interface{}) (*Token, error) {
+func New(tid TokenType, lex string, loc int, obj interface{}) (*Token, error) {
 	if !tid.Valid() {
 		return nil, errors.New("invalid TokID passed to NewToken")
 	}
-	return &Token{id: tid, lexeme: lex, line: loc, literal: obj}, nil
+	return &Token{tp: tid, lexeme: lex, line: loc, literal: obj}, nil
 }
 
-func (t *Token) ID() TokID {
-	return t.id
+func (t *Token) ID() TokenType {
+	return t.tp
 }
 
 func (t *Token) Lexeme() string {
@@ -178,16 +178,26 @@ func (t *Token) String() string {
 	return s
 }
 
-func (t *Token) SetBiFunc() {
-	t.literal = binaryFuncs[t.id]
+func (t *Token) SetBiFunc() error {
+	fn := binaryFuncs[t.tp]
+	if fn == nil {
+		return errors.New("Unrecognized token type for binary function.")
+	}
+	t.literal = fn
+	return nil
 }
 
 func (t *Token) BiFunc(x, y interface{}) interface{} {
 	return t.literal.(biFunc)(x, y)
 }
 
-func (t *Token) SetUnFunc() {
-	t.literal = unaryFuncs[t.id]
+func (t *Token) SetUnFunc() error {
+	fn := unaryFuncs[t.tp]
+	if fn == nil {
+		return errors.New("Unrecognized token type for unary function.")
+	}
+	t.literal = fn
+	return nil
 }
 
 func (t *Token) UnFunc(x interface{}) interface{} {
@@ -268,7 +278,7 @@ func notEqual(x, y interface{}) interface{} {
 	return !equal(x, y).(bool)
 }
 
-var binaryFuncs = map[TokID]biFunc{
+var binaryFuncs = [...]biFunc{
 	PLUS:          add,
 	MINUS:         subtract,
 	SLASH:         divide,
@@ -302,7 +312,7 @@ func negate(x interface{}) interface{} {
 	return -1 * x.(float64)
 }
 
-var unaryFuncs = map[TokID]unFunc{
+var unaryFuncs = [...]unFunc{
 	MINUS: negate,
 	BANG:  isNotTruthy,
 }

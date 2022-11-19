@@ -33,6 +33,15 @@ func (pp *PrettyPrinter) VisitUnary(un *expressions.Unary) interface{} {
 	return pp.parenthesize(un.Operator().Lexeme(), un.Right())
 }
 
+func (pp *PrettyPrinter) VisitVarExpr(vr *expressions.VarExpr) interface{} {
+	return vr.Name().Lexeme()
+}
+
+func (pp *PrettyPrinter) VisitAssignment(as *expressions.Assignment) interface{} {
+	nm := fmt.Sprintf("assignment %s", as.Name().Lexeme())
+	return pp.parenthesize(nm, as.Value())
+}
+
 func (pp *PrettyPrinter) parenthesize(name string, exprs ...expressions.Expr) interface{} {
 	var bld strings.Builder
 	bld.WriteString(fmt.Sprintf("(%s", name))

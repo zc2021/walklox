@@ -9,7 +9,7 @@ import (
 )
 
 func UpperString(s string) string {
-	return cases.Title(language.Und).String(s)
+	return cases.Title(language.Und, cases.NoLower).String(s)
 }
 
 func ConstructorFunc(ss *StructStr) FuncStr {

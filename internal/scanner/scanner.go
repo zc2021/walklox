@@ -171,9 +171,9 @@ func (s *Scanner) scanToken() {
 	case ')':
 		s.addToken(tokens.RIGHT_PAREN, nil)
 	case '{':
-		s.addToken(tokens.RIGHT_BRACE, nil)
-	case '}':
 		s.addToken(tokens.LEFT_BRACE, nil)
+	case '}':
+		s.addToken(tokens.RIGHT_BRACE, nil)
 	// separators & line ends
 	case ',':
 		s.addToken(tokens.COMMA, nil)

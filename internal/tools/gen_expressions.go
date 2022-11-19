@@ -3,70 +3,117 @@
 package main
 
 import (
-	"os"
-
 	"devZ/lox/internal/tools"
 )
 
 func main() {
-	bibod := "op.SetBiFunc()"
+	fields := map[string]tools.FieldStr{
+		"nm_tok": tools.FieldStr{
+			Name:  "name",
+			Param: "nm",
+			Type:  "*tokens.Token",
+		},
+		"op_tok": tools.FieldStr{
+			Name:  "operator",
+			Param: "op",
+			Type:  "*tokens.Token",
+		},
+		"expr": tools.FieldStr{
+			Name:  "expression",
+			Param: "ex",
+			Type:  "Expr",
+		},
+		"right_expr": tools.FieldStr{
+			Name:  "right",
+			Param: "rt",
+			Type:  "Expr",
+		},
+		"left_expr": tools.FieldStr{
+			Name:  "left",
+			Param: "lf",
+			Type:  "Expr",
+		},
+		"val_expr": tools.FieldStr{
+			Name:  "value",
+			Param: "vl",
+			Type:  "Expr",
+		},
+		"value": tools.FieldStr{
+			Name:  "value",
+			Param: "val",
+			Type:  "interface{}",
+		},
+	}
+
+	op_bodies := map[string]string{
+		"unary":  "op.SetUnFunc()",
+		"binary": "op.SetBiFunc()",
+	}
+
 	binary := tools.StructStr{
 		Name:  "Binary",
 		Param: "bi",
 		Fields: []tools.FieldStr{
-			tools.FieldStr{
-				Name:  "left",
-				Param: "lf",
-				Type:  "Expr",
-			},
-			tools.FieldStr{
-				Name:  "operator",
-				Param: "op",
-				Type:  "*tokens.Token",
-				SetBd: []string{bibod},
-			},
-			tools.FieldStr{
-				Name:  "right",
-				Param: "rt",
-				Type:  "Expr",
-			},
+			fields["left_expr"],
+			fields["op_tok"],
+			fields["right_expr"],
 		},
-		CnstBd: []string{bibod},
+		CnstBd: []string{op_bodies["binary"]},
 	}
+	binary.Fields[1].SetBd = []string{op_bodies["binary"]}
 
 	group := tools.StructStr{
 		Name:  "Grouping",
 		Param: "gr",
 		Fields: []tools.FieldStr{
-			tools.FieldStr{
-				Name:  "expression",
-				Param: "ex",
-				Type:  "Expr"}}}
+			fields["expr"],
+		},
+	}
 
 	literal := tools.StructStr{
 		Name:  "Literal",
 		Param: "li",
 		Fields: []tools.FieldStr{
-			tools.FieldStr{
-				Name:  "value",
-				Param: "val",
-				Type:  "interface{}"}}}
+			fields["value"],
+		},
+	}
 
-	unbod := "op.SetUnFunc()"
 	unary := tools.StructStr{
 		Name:  "Unary",
 		Param: "un",
 		Fields: []tools.FieldStr{
-			tools.FieldStr{
-				Name:  "operator",
-				Param: "op",
-				Type:  "*tokens.Token",
-				SetBd: []string{unbod}},
-			tools.FieldStr{
-				Name:  "right",
-				Param: "rt",
-				Type:  "Expr"}},
-		CnstBd: []string{unbod}}
+			fields["op_tok"],
+			fields["right_expr"],
+		},
+		CnstBd: []string{op_bodies["unary"]},
+	}
+	unary.Fields[0].SetBd = []string{op_bodies["unary"]}
+
+	variable := tools.StructStr{
+		Name:  "VarExpr",
+		Param: "vr",
+		Fields: []tools.FieldStr{
+			fields["nm_tok"],
+		},
+	}
+
+	assignment := tools.StructStr{
+		Name:  "Assignment",
+		Param: "as",
+		Fields: []tools.FieldStr{
+			fields["nm_tok"],
+			fields["val_expr"],
+		},
+	}
+
+	expr_types := []tools.StructStr{
+		binary,
+		group,
+		literal,
+		unary,
+		variable,
+		assignment,
+	}
 
 	expression := tools.InterfaceStr{
 		Name: "Expr",
@@ -79,39 +126,12 @@ func main() {
 		},
 	}
 
-	strcs := []tools.StructStr{binary, group, literal, unary}
-
-	var methods, funcs, visitSigs []tools.FuncStr
-
-	av_void := false
-
-	for _, s := range strcs {
-		methods = append(methods, tools.AcceptMethod(&s, av_void))
-		methods = append(methods, tools.Getters(&s)...)
-		methods = append(methods, tools.Setters(&s)...)
-		funcs = append(funcs, tools.ConstructorFunc(&s))
-		visitSigs = append(visitSigs, tools.VisitSig(&s, av_void))
-	}
-
-	visitor := tools.InterfaceStr{
-		Name: "Visitor",
-		Sigs: visitSigs,
-	}
-
-	interfaces := []tools.InterfaceStr{expression, visitor}
-
 	pkgInfo := tools.PkgTemplateData{
 		Package:    "expressions",
 		Imports:    []string{"devZ/lox/internal/tokens"},
-		Structs:    strcs,
-		Interfaces: interfaces,
-		Methods:    methods,
-		Functions:  funcs,
+		Structs:    expr_types,
+		Interfaces: []tools.InterfaceStr{expression},
 	}
 
-	f, err := os.Create("../expressions/expr_structs_ints.go")
-	if err != nil {
-		panic(err)
-	}
-	tools.GeneratePkgFile(f, &pkgInfo)
+	tools.GenerateVisitorPkgFile("expr_structs_ints.go", &pkgInfo, false)
 }

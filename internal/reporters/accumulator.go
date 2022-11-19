@@ -37,6 +37,13 @@ type loxComment struct {
 	message string
 }
 
+func NewAccumulator() *Accumulator {
+	return &Accumulator{
+		errors:   make([]*loxError, 0),
+		comments: make([]*loxComment, 0),
+	}
+}
+
 func (le loxError) String() string {
 	return fmt.Sprintf("[line %d] Error: %s", le.line, le.message)
 }
@@ -79,11 +86,14 @@ func (a *Accumulator) HasErrors() bool {
 }
 
 func (a *Accumulator) LastError() error {
+	if len(a.errors) == 0 {
+		return nil
+	}
 	return a.errors[len(a.errors)-1]
 }
 
 func (a *Accumulator) ResetErrors() {
-	a.errors = []*loxError{}
+	a.errors = make([]*loxError, 0)
 }
 
 func (a *Accumulator) PrintErrors() {

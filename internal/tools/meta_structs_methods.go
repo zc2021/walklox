@@ -3,11 +3,11 @@ package tools
 import "strings"
 
 type FuncStr struct {
-	Name     string
 	Receiver string
+	Name     string
 	Params   []string
-	Return   []string
 	Body     string
+	Return   []string
 }
 
 func (f *FuncStr) ListParams() string {

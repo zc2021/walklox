@@ -23,28 +23,9 @@ func New(tks []*tokens.Token, a *reporters.Accumulator) *Parser {
 func (p *Parser) Parse() []statements.Stmt {
 	stmts := make([]statements.Stmt, 0)
 	for !p.isAtEnd() {
-		stmts = append(stmts, p.statement())
+		stmts = append(stmts, p.declaration())
 	}
 	return stmts
-}
-
-func (p *Parser) statement() statements.Stmt {
-	if p.match(tokens.PRINT) {
-		return p.printStatement()
-	}
-	return p.exprStatement()
-}
-
-func (p *Parser) printStatement() statements.Stmt {
-	expr := p.expression()
-	p.consume(tokens.SEMICOLON, "Expect ';' after value.")
-	return statements.NewPrint(expr)
-}
-
-func (p *Parser) exprStatement() statements.Stmt {
-	expr := p.expression()
-	p.consume(tokens.SEMICOLON, "Expect ';' after value.")
-	return statements.NewExpression(expr)
 }
 
 func (p *Parser) isAtEnd() bool {
@@ -83,8 +64,77 @@ func (p *Parser) match(tids ...tokens.TokenType) bool {
 	return false
 }
 
+func (p *Parser) declaration() statements.Stmt {
+	var stmt statements.Stmt
+	if p.match(tokens.VAR) {
+		stmt = p.varDeclaration()
+	} else {
+		stmt = p.statement()
+	}
+	if p.accum.HasErrors() {
+		p.synchronize()
+		return nil
+	}
+	return stmt
+}
+
+func (p *Parser) varDeclaration() statements.Stmt {
+	name := p.consume(tokens.IDENTIFIER, "Expect variable name.")
+	var initializer expressions.Expr
+	if p.match(tokens.EQUAL) {
+		initializer = p.expression()
+	}
+	p.consume(tokens.SEMICOLON, "Expect ';' after variable declaration.")
+	return statements.NewVarStmt(name, initializer)
+}
+
+func (p *Parser) statement() statements.Stmt {
+	if p.match(tokens.PRINT) {
+		return p.printStatement()
+	}
+	if p.match(tokens.LEFT_BRACE) {
+		return statements.NewBlock(p.block())
+	}
+	return p.exprStatement()
+}
+
+func (p *Parser) printStatement() statements.Stmt {
+	expr := p.expression()
+	p.consume(tokens.SEMICOLON, "Expect ';' after value.")
+	return statements.NewPrint(expr)
+}
+
+func (p *Parser) exprStatement() statements.Stmt {
+	expr := p.expression()
+	p.consume(tokens.SEMICOLON, "Expect ';' after value.")
+	return statements.NewExpression(expr)
+}
+
+func (p *Parser) block() []statements.Stmt {
+	stmts := make([]statements.Stmt, 0)
+	for !p.check(tokens.RIGHT_BRACE) && !p.isAtEnd() {
+		stmts = append(stmts, p.declaration())
+	}
+	p.consume(tokens.RIGHT_BRACE, "Expect '}' after block.")
+	return stmts
+}
+
 func (p *Parser) expression() expressions.Expr {
-	return p.equality()
+	return p.assignment()
+}
+
+func (p *Parser) assignment() expressions.Expr {
+	expr := p.equality()
+	if p.match(tokens.EQUAL) {
+		eqs := p.previous()
+		val := p.assignment()
+		exVar, ok := expr.(*expressions.VarExpr)
+		if ok {
+			return expressions.NewAssignment(exVar.Name(), val)
+		}
+		p.accum.AddError(eqs.Line(), "Invalid assignment target.", CTX)
+	}
+	return expr
 }
 
 func (p *Parser) equality() expressions.Expr {
@@ -149,6 +199,9 @@ func (p *Parser) primary() expressions.Expr {
 	if p.match(tokens.NUMBER, tokens.STRING) {
 		return expressions.NewLiteral(p.previous().Literal())
 	}
+	if p.match(tokens.IDENTIFIER) {
+		return expressions.NewVarExpr(p.previous())
+	}
 	if p.match(tokens.LEFT_PAREN) {
 		ex := p.expression()
 		p.consume(tokens.RIGHT_PAREN, "Expect ')' after expression.")
@@ -168,9 +221,6 @@ func (p *Parser) consume(tid tokens.TokenType, msg string) *tokens.Token {
 
 func (p *Parser) error(msg string) {
 	p.accum.AddError(p.peek().Line(), msg, CTX)
-	if !p.isAtEnd() {
-		p.synchronize()
-	}
 }
 
 func (p *Parser) synchronize() {

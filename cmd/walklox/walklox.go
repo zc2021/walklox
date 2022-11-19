@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"devZ/lox/internal/environment"
 	"devZ/lox/internal/interpreter"
 	"devZ/lox/internal/parser"
 	"devZ/lox/internal/reporters"
@@ -32,11 +33,13 @@ func runFile(filePath string) int {
 	if err != nil {
 		return int(reporters.FILE)
 	}
-	return run(script)
+	env := environment.NewGlobal()
+	return run(script, env)
 }
 
 func runPrompt(p string) int {
 	input := bufio.NewReader(os.Stdin)
+	env := environment.NewGlobal()
 	for {
 		fmt.Print(p)
 		line, err := input.ReadBytes('\n')
@@ -49,13 +52,13 @@ func runPrompt(p string) int {
 		if line == nil {
 			break
 		}
-		run(line)
+		run(line, env)
 	}
 	return int(reporters.SUCCESS)
 }
 
-func run(script []byte) int {
-	accum := &reporters.Accumulator{}
+func run(script []byte, env *environment.Execution) int {
+	accum := reporters.NewAccumulator()
 	inpt := scanner.New(script, accum)
 	toks := inpt.ScanTokens()
 	if checkErrs(accum) != nil {
@@ -66,7 +69,7 @@ func run(script []byte) int {
 	if checkErrs(accum) != nil {
 		return int(parser.CTX)
 	}
-	intpr := interpreter.New(accum)
+	intpr := interpreter.New(accum, env)
 	intpr.Interpret(stmts)
 	if checkErrs(accum) != nil {
 		return int(interpreter.CTX)

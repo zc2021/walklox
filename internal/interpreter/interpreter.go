@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"devZ/lox/internal/environment"
 	"devZ/lox/internal/expressions"
 	"devZ/lox/internal/reporters"
 	"devZ/lox/internal/statements"
@@ -12,12 +13,16 @@ const CTX = reporters.INTERPRETING
 
 type Interpreter struct {
 	accum   *reporters.Accumulator
+	env     *environment.Execution
 	Printer *reporters.PrettyPrinter
 }
 
-func New(a *reporters.Accumulator) *Interpreter {
+func New(a *reporters.Accumulator, e *environment.Execution) *Interpreter {
+	e.SetCtx(CTX)
+	e.SetAccum(a)
 	return &Interpreter{
 		accum: a,
+		env:   e,
 	}
 }
 
@@ -95,12 +100,14 @@ func (i *Interpreter) VisitUnary(un *expressions.Unary) interface{} {
 	return un.Operator().UnFunc(rt)
 }
 
-func (i *Interpreter) evaluate(e expressions.Expr) interface{} {
-	return e.Accept(i)
+func (i *Interpreter) VisitVarExpr(vr *expressions.VarExpr) interface{} {
+	return i.env.Get(vr.Name())
 }
 
-func (i *Interpreter) execute(s statements.Stmt) {
-	s.Accept(i)
+func (i *Interpreter) VisitAssignment(as *expressions.Assignment) interface{} {
+	val := i.evaluate(as.Value())
+	i.env.Assign(as, val)
+	return val
 }
 
 func (i *Interpreter) VisitExpression(expst *statements.Expression) {
@@ -109,7 +116,24 @@ func (i *Interpreter) VisitExpression(expst *statements.Expression) {
 
 func (i *Interpreter) VisitPrint(prnst *statements.Print) {
 	val := i.evaluate(prnst.Expression())
+	if i.accum.HasErrors() {
+		return
+	}
 	fmt.Println(stringify(val))
+}
+
+func (i *Interpreter) VisitVarStmt(varst *statements.VarStmt) {
+	var val interface{}
+	if varst.Initializer() != nil {
+		val = i.evaluate(varst.Initializer())
+	}
+	i.env.Define(varst.Name().Lexeme(), val)
+}
+
+func (i *Interpreter) VisitBlock(blk *statements.Block) {
+	i.env = i.env.Block()
+	i.executeBlock(blk.Statements())
+	i.env = i.env.Up()
 }
 
 func (i *Interpreter) checkNum(x interface{}, loc int, msg string) (float64, bool) {
@@ -128,4 +152,22 @@ func (i *Interpreter) checkStr(x interface{}, loc int, msg string) (string, bool
 		return "", false
 	}
 	return s, true
+}
+
+func (i *Interpreter) evaluate(e expressions.Expr) interface{} {
+	return e.Accept(i)
+}
+
+func (i *Interpreter) execute(s statements.Stmt) {
+	s.Accept(i)
+}
+
+func (i *Interpreter) executeBlock(stmts []statements.Stmt) {
+	err := i.accum.LastError()
+	for _, stmt := range stmts {
+		i.execute(stmt)
+		if i.accum.LastError() != err {
+			break
+		}
+	}
 }

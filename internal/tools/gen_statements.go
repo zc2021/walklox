@@ -3,33 +3,30 @@
 package main
 
 import (
-	"os"
-
 	"devZ/lox/internal/tools"
 )
 
 func main() {
-	exprStmt := tools.StructStr{
-		Name:  "Expression",
-		Param: "expst",
-		Fields: []tools.FieldStr{
-			tools.FieldStr{
-				Name:  "expression",
-				Param: "ex",
-				Type:  "expressions.Expr",
-			},
+	fields := map[string]tools.FieldStr{
+		"expression": tools.FieldStr{
+			Name:  "expression",
+			Param: "ex",
+			Type:  "expressions.Expr",
 		},
-	}
-
-	prnStmt := tools.StructStr{
-		Name:  "Print",
-		Param: "prnst",
-		Fields: []tools.FieldStr{
-			tools.FieldStr{
-				Name:  "expression",
-				Param: "ex",
-				Type:  "expressions.Expr",
-			},
+		"nm_tok": tools.FieldStr{
+			Name:  "name",
+			Param: "nm",
+			Type:  "*tokens.Token",
+		},
+		"init_expr": tools.FieldStr{
+			Name:  "initializer",
+			Param: "init",
+			Type:  "expressions.Expr",
+		},
+		"stmt_list": tools.FieldStr{
+			Name:  "statements",
+			Param: "sts",
+			Type:  "[]Stmt",
 		},
 	}
 
@@ -43,39 +40,48 @@ func main() {
 		},
 	}
 
-	strcs := []tools.StructStr{exprStmt, prnStmt}
-
-	var methods, funcs, visitSigs []tools.FuncStr
-
-	av_void := true
-
-	for _, s := range strcs {
-		methods = append(methods, tools.AcceptMethod(&s, av_void))
-		methods = append(methods, tools.Getters(&s)...)
-		methods = append(methods, tools.Setters(&s)...)
-		funcs = append(funcs, tools.ConstructorFunc(&s))
-		visitSigs = append(visitSigs, tools.VisitSig(&s, av_void))
+	exprStmt := tools.StructStr{
+		Name:  "Expression",
+		Param: "expst",
+		Fields: []tools.FieldStr{
+			fields["expression"],
+		},
 	}
 
-	visitor := tools.InterfaceStr{
-		Name: "Visitor",
-		Sigs: visitSigs,
+	prnStmt := tools.StructStr{
+		Name:  "Print",
+		Param: "prnst",
+		Fields: []tools.FieldStr{
+			fields["expression"],
+		},
 	}
 
-	interfaces := []tools.InterfaceStr{statement, visitor}
+	varStmt := tools.StructStr{
+		Name:  "VarStmt",
+		Param: "varst",
+		Fields: []tools.FieldStr{
+			fields["nm_tok"],
+			fields["init_expr"],
+		},
+	}
+
+	block := tools.StructStr{
+		Name:  "Block",
+		Param: "blk",
+		Fields: []tools.FieldStr{
+			fields["stmt_list"],
+		},
+	}
+
+	statement_types := []tools.StructStr{exprStmt, prnStmt, varStmt, block}
+	imps := []string{"devZ/lox/internal/expressions", "devZ/lox/internal/tokens"}
 
 	pkgInfo := tools.PkgTemplateData{
 		Package:    "statements",
-		Imports:    []string{"devZ/lox/internal/expressions"},
-		Structs:    strcs,
-		Interfaces: interfaces,
-		Methods:    methods,
-		Functions:  funcs,
+		Imports:    imps,
+		Structs:    statement_types,
+		Interfaces: []tools.InterfaceStr{statement},
 	}
 
-	f, err := os.Create("../statements/stmt_structs_ints.go")
-	if err != nil {
-		panic(err)
-	}
-	tools.GeneratePkgFile(f, &pkgInfo)
+	tools.GenerateVisitorPkgFile("stmt_structs_ints.go", &pkgInfo, true)
 }

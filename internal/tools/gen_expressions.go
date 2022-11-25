@@ -59,6 +59,16 @@ func main() {
 		},
 	}
 
+	logical := tools.StructStr{
+		Name:  "Logical",
+		Param: "lg",
+		Fields: []tools.FieldStr{
+			tools.Fields["expression"]("left", "lf", false),
+			tools.Fields["token"]("operator", "op", true),
+			tools.Fields["expression"]("right", "rt", false),
+		},
+	}
+
 	expr_types := []tools.StructStr{
 		binary,
 		group,
@@ -66,6 +76,7 @@ func main() {
 		unary,
 		variable,
 		assignment,
+		logical,
 	}
 
 	expression := tools.InterfaceStr{

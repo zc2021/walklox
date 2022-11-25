@@ -117,15 +117,15 @@ func negate(x interface{}) interface{} {
 func defaultOps() (unfns []tokens.UnFunc, bifns []tokens.BiFunc) {
 	unfns = make([]tokens.UnFunc, len(unaryFuncs[:]))
 	bifns = make([]tokens.BiFunc, len(binaryFuncs[:]))
-	copy(unaryFuncs[:], unfns)
-	copy(binaryFuncs[:], bifns)
+	copy(unfns, unaryFuncs[:])
+	copy(bifns, binaryFuncs[:])
 	return
 }
 
 func copyOps(e *Execution) (unfns []tokens.UnFunc, bifns []tokens.BiFunc) {
 	unfns = make([]tokens.UnFunc, len(unaryFuncs[:]))
 	bifns = make([]tokens.BiFunc, len(binaryFuncs[:]))
-	copy(e.unary_ops[:], unfns)
-	copy(e.binary_ops[:], bifns)
+	copy(unfns, e.unary_ops[:])
+	copy(bifns, e.binary_ops[:])
 	return
 }

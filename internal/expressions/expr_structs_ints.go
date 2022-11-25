@@ -17,6 +17,7 @@ type Visitor interface {
 	VisitUnary(un *Unary) interface{}
 	VisitVarExpr(vr *VarExpr) interface{}
 	VisitAssignment(as *Assignment) interface{}
+	VisitLogical(lg *Logical) interface{}
 }
 
 type Binary struct {
@@ -45,6 +46,12 @@ type VarExpr struct {
 type Assignment struct {
 	name  *tokens.Token
 	value Expr
+}
+
+type Logical struct {
+	left     Expr
+	operator *tokens.Token
+	right    Expr
 }
 
 func (bi *Binary) Accept(v Visitor) interface{} {
@@ -151,6 +158,34 @@ func (as *Assignment) SetValue(vl Expr) {
 	as.value = vl
 }
 
+func (lg *Logical) Accept(v Visitor) interface{} {
+	return v.VisitLogical(lg)
+}
+
+func (lg *Logical) Left() Expr {
+	return lg.left
+}
+
+func (lg *Logical) Operator() *tokens.Token {
+	return lg.operator
+}
+
+func (lg *Logical) Right() Expr {
+	return lg.right
+}
+
+func (lg *Logical) SetLeft(lf Expr) {
+	lg.left = lf
+}
+
+func (lg *Logical) SetOperator(op *tokens.Token) {
+	lg.operator = op
+}
+
+func (lg *Logical) SetRight(rt Expr) {
+	lg.right = rt
+}
+
 func NewBinary(lf Expr, op *tokens.Token, rt Expr) *Binary {
 	return &Binary{
 		left:     lf,
@@ -188,5 +223,13 @@ func NewAssignment(nm *tokens.Token, vl Expr) *Assignment {
 	return &Assignment{
 		name:  nm,
 		value: vl,
+	}
+}
+
+func NewLogical(lf Expr, op *tokens.Token, rt Expr) *Logical {
+	return &Logical{
+		left:     lf,
+		operator: op,
+		right:    rt,
 	}
 }

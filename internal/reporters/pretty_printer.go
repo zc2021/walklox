@@ -42,6 +42,10 @@ func (pp *PrettyPrinter) VisitAssignment(as *expressions.Assignment) interface{}
 	return pp.parenthesize(nm, as.Value())
 }
 
+func (pp *PrettyPrinter) VisitLogical(lg *expressions.Logical) interface{} {
+	return pp.parenthesize(lg.Operator().Lexeme(), lg.Left(), lg.Right())
+}
+
 func (pp *PrettyPrinter) parenthesize(name string, exprs ...expressions.Expr) interface{} {
 	var bld strings.Builder
 	bld.WriteString(fmt.Sprintf("(%s", name))

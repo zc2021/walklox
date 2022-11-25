@@ -139,7 +139,7 @@ func (p *Parser) expression() expressions.Expr {
 }
 
 func (p *Parser) assignment() expressions.Expr {
-	expr := p.equality()
+	expr := p.logical()
 	if p.match(tokens.EQUAL) {
 		eqs := p.previous()
 		val := p.assignment()
@@ -148,6 +148,16 @@ func (p *Parser) assignment() expressions.Expr {
 			return expressions.NewAssignment(exVar.Name(), val)
 		}
 		p.accum.AddError(eqs.Line(), "Invalid assignment target.", CTX)
+	}
+	return expr
+}
+
+func (p *Parser) logical() expressions.Expr {
+	expr := p.equality()
+	for p.match(tokens.OR, tokens.AND) {
+		op := p.previous()
+		right := p.equality()
+		expr = expressions.NewLogical(expr, op, right)
 	}
 	return expr
 }

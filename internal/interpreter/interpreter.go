@@ -54,13 +54,14 @@ func biMsg(tp, loc string, val *tokens.Token) string {
 }
 
 func (i *Interpreter) VisitBinary(bi *expressions.Binary) interface{} {
-	lf := i.evaluate(bi.Left())
-	rt := i.evaluate(bi.Right())
 	opLoc := bi.Operator().Line()
 	err := i.SetBiFunc(bi.Operator())
 	if err != nil {
 		i.accum.AddError(opLoc, err.Error(), CTX)
+		return nil
 	}
+	lf := i.evaluate(bi.Left())
+	rt := i.evaluate(bi.Right())
 	lfMsgNum := biMsg("number", "before", bi.Operator())
 	rtMsgNum := biMsg("number", "after", bi.Operator())
 	rtMsgStr := biMsg("string", "after", bi.Operator())
@@ -86,12 +87,13 @@ func (i *Interpreter) VisitBinary(bi *expressions.Binary) interface{} {
 }
 
 func (i *Interpreter) VisitUnary(un *expressions.Unary) interface{} {
-	rt := i.evaluate(un.Right())
 	opLoc := un.Operator().Line()
 	err := i.SetUnFunc(un.Operator())
 	if err != nil {
 		i.accum.AddError(opLoc, err.Error(), CTX)
+		return nil
 	}
+	rt := i.evaluate(un.Right())
 	rtMsgNum := fmt.Sprintf("expect a number after %s", un.Operator().String())
 	if un.Operator().ID() == tokens.MINUS {
 		_, ok := i.checkNum(rt, opLoc, rtMsgNum)
@@ -120,13 +122,28 @@ func (i *Interpreter) VisitAssignment(as *expressions.Assignment) interface{} {
 	return val
 }
 
+func (i *Interpreter) VisitLogical(lg *expressions.Logical) interface{} {
+	left := i.evaluate(lg.Left())
+	if lg.Operator().ID() == tokens.OR {
+		if environment.IsTruthy(left).(bool) {
+			return left
+		}
+	} else {
+		if !environment.IsTruthy(left).(bool) {
+			return left
+		}
+	}
+	return i.evaluate(lg.Right())
+}
+
 func (i *Interpreter) VisitExpression(expst *statements.Expression) interface{} {
 	return i.evaluate(expst.Expression())
 }
 
 func (i *Interpreter) VisitPrint(prnst *statements.Print) interface{} {
+	err := i.accum.LastError()
 	val := i.evaluate(prnst.Expression())
-	if i.accum.HasErrors() {
+	if i.accum.LastError() != err {
 		return nil
 	}
 	fmt.Println(stringify(val))

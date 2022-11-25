@@ -34,7 +34,8 @@ func runFile(filePath string) int {
 		return int(reporters.FILE)
 	}
 	env := environment.NewGlobal()
-	return run(script, env)
+	_, ex := run(script, env)
+	return ex
 }
 
 func runPrompt(p string) int {
@@ -52,29 +53,30 @@ func runPrompt(p string) int {
 		if line == nil {
 			break
 		}
-		run(line, env)
+		val, _ := run(line, env)
+		fmt.Println(val)
 	}
 	return int(reporters.SUCCESS)
 }
 
-func run(script []byte, env *environment.Execution) int {
+func run(script []byte, env *environment.Execution) (interface{}, int) {
 	accum := reporters.NewAccumulator()
 	inpt := scanner.New(script, accum)
 	toks := inpt.ScanTokens()
 	if checkErrs(accum) != nil {
-		return int(scanner.CTX)
+		return nil, int(scanner.CTX)
 	}
 	prs := parser.New(toks, accum)
 	stmts := prs.Parse()
 	if checkErrs(accum) != nil {
-		return int(parser.CTX)
+		return nil, int(parser.CTX)
 	}
 	intpr := interpreter.New(accum, env)
-	intpr.Interpret(stmts)
+	val := intpr.Interpret(stmts)
 	if checkErrs(accum) != nil {
-		return int(interpreter.CTX)
+		return nil, int(interpreter.CTX)
 	}
-	return 0
+	return val, int(reporters.SUCCESS)
 }
 
 func checkErrs(a *reporters.Accumulator) error {

@@ -68,7 +68,6 @@ func (bi *Binary) SetLeft(lf Expr) {
 }
 
 func (bi *Binary) SetOperator(op *tokens.Token) {
-	op.SetBiFunc()
 	bi.operator = op
 }
 
@@ -113,7 +112,6 @@ func (un *Unary) Right() Expr {
 }
 
 func (un *Unary) SetOperator(op *tokens.Token) {
-	op.SetUnFunc()
 	un.operator = op
 }
 
@@ -154,7 +152,6 @@ func (as *Assignment) SetValue(vl Expr) {
 }
 
 func NewBinary(lf Expr, op *tokens.Token, rt Expr) *Binary {
-	op.SetBiFunc()
 	return &Binary{
 		left:     lf,
 		operator: op,
@@ -175,7 +172,6 @@ func NewLiteral(val interface{}) *Literal {
 }
 
 func NewUnary(op *tokens.Token, rt Expr) *Unary {
-	op.SetUnFunc()
 	return &Unary{
 		operator: op,
 		right:    rt,

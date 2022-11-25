@@ -75,7 +75,7 @@ func (a *Accumulator) add(item interface{}) error {
 		lc := item.(loxComment)
 		a.comments = append(a.comments, &lc)
 	default:
-		errString := fmt.Sprintf("Accumulator cannot collect %T", it)
+		errString := fmt.Sprintf("accumulator cannot collect %T", it)
 		return errors.New(errString)
 	}
 	return nil

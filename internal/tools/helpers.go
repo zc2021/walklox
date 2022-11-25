@@ -65,13 +65,10 @@ func Getters(ss *StructStr) []FuncStr {
 	return gtrs
 }
 
-func VisitSig(ss *StructStr, void bool) FuncStr {
+func VisitSig(ss *StructStr) FuncStr {
 	casedAcceptor := UpperString(ss.Name)
 	name := fmt.Sprintf("Visit%s", casedAcceptor)
 	retstr := "interface{}"
-	if void {
-		retstr = ""
-	}
 	return FuncStr{
 		Name: name,
 		Params: []string{
@@ -81,13 +78,9 @@ func VisitSig(ss *StructStr, void bool) FuncStr {
 	}
 }
 
-func AcceptMethod(ss *StructStr, void bool) FuncStr {
+func AcceptMethod(ss *StructStr) FuncStr {
 	bdfmt := "return v.%s(%s)"
 	retstr := "interface{}"
-	if void {
-		bdfmt = "v.%s(%s)"
-		retstr = ""
-	}
 	casedAcceptor := UpperString(ss.Name)
 	visitName := fmt.Sprintf("Visit%s", casedAcceptor)
 	return FuncStr{

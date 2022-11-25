@@ -7,26 +7,46 @@ import (
 )
 
 func main() {
-	fields := map[string]tools.FieldStr{
-		"expression": tools.FieldStr{
-			Name:  "expression",
-			Param: "ex",
-			Type:  "expressions.Expr",
+	expr := tools.StructStr{
+		Name:  "Expression",
+		Param: "expst",
+		Fields: []tools.FieldStr{
+			tools.Fields["expression"]("expression", "ex", true),
 		},
-		"nm_tok": tools.FieldStr{
-			Name:  "name",
-			Param: "nm",
-			Type:  "*tokens.Token",
+	}
+
+	prn := tools.StructStr{
+		Name:  "Print",
+		Param: "prnst",
+		Fields: []tools.FieldStr{
+			tools.Fields["expression"]("expression", "ex", true),
 		},
-		"init_expr": tools.FieldStr{
-			Name:  "initializer",
-			Param: "init",
-			Type:  "expressions.Expr",
+	}
+
+	varStmt := tools.StructStr{
+		Name:  "VarStmt",
+		Param: "varst",
+		Fields: []tools.FieldStr{
+			tools.Fields["token"]("name", "nm", true),
+			tools.Fields["expression"]("initializer", "init", true),
 		},
-		"stmt_list": tools.FieldStr{
-			Name:  "statements",
-			Param: "sts",
-			Type:  "[]Stmt",
+	}
+
+	block := tools.StructStr{
+		Name:  "Block",
+		Param: "blk",
+		Fields: []tools.FieldStr{
+			tools.Fields["stmt_list"]("statements", "stmts", false),
+		},
+	}
+
+	conditional := tools.StructStr{
+		Name:  "If",
+		Param: "ifst",
+		Fields: []tools.FieldStr{
+			tools.Fields["expression"]("condition", "cnd", true),
+			tools.Fields["stmt"]("thenBranch", "thbr", false),
+			tools.Fields["stmt"]("elseBranch", "elbr", false),
 		},
 	}
 
@@ -36,44 +56,12 @@ func main() {
 			tools.FuncStr{
 				Name:   "Accept",
 				Params: []string{"v Visitor"},
+				Return: []string{"interface{}"},
 			},
 		},
 	}
 
-	exprStmt := tools.StructStr{
-		Name:  "Expression",
-		Param: "expst",
-		Fields: []tools.FieldStr{
-			fields["expression"],
-		},
-	}
-
-	prnStmt := tools.StructStr{
-		Name:  "Print",
-		Param: "prnst",
-		Fields: []tools.FieldStr{
-			fields["expression"],
-		},
-	}
-
-	varStmt := tools.StructStr{
-		Name:  "VarStmt",
-		Param: "varst",
-		Fields: []tools.FieldStr{
-			fields["nm_tok"],
-			fields["init_expr"],
-		},
-	}
-
-	block := tools.StructStr{
-		Name:  "Block",
-		Param: "blk",
-		Fields: []tools.FieldStr{
-			fields["stmt_list"],
-		},
-	}
-
-	statement_types := []tools.StructStr{exprStmt, prnStmt, varStmt, block}
+	statement_types := []tools.StructStr{expr, prn, varStmt, block, conditional}
 	imps := []string{"devZ/lox/internal/expressions", "devZ/lox/internal/tokens"}
 
 	pkgInfo := tools.PkgTemplateData{
@@ -83,5 +71,5 @@ func main() {
 		Interfaces: []tools.InterfaceStr{statement},
 	}
 
-	tools.GenerateVisitorPkgFile("stmt_structs_ints.go", &pkgInfo, true)
+	tools.GenerateVisitorPkgFile("stmt_structs_ints.go", &pkgInfo)
 }

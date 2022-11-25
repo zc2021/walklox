@@ -8,14 +8,15 @@ import (
 )
 
 type Stmt interface {
-	Accept(v Visitor)
+	Accept(v Visitor) interface{}
 }
 
 type Visitor interface {
-	VisitExpression(expst *Expression)
-	VisitPrint(prnst *Print)
-	VisitVarStmt(varst *VarStmt)
-	VisitBlock(blk *Block)
+	VisitExpression(expst *Expression) interface{}
+	VisitPrint(prnst *Print) interface{}
+	VisitVarStmt(varst *VarStmt) interface{}
+	VisitBlock(blk *Block) interface{}
+	VisitIf(ifst *If) interface{}
 }
 
 type Expression struct {
@@ -35,8 +36,14 @@ type Block struct {
 	statements []Stmt
 }
 
-func (expst *Expression) Accept(v Visitor) {
-	v.VisitExpression(expst)
+type If struct {
+	condition  expressions.Expr
+	thenBranch Stmt
+	elseBranch Stmt
+}
+
+func (expst *Expression) Accept(v Visitor) interface{} {
+	return v.VisitExpression(expst)
 }
 
 func (expst *Expression) Expression() expressions.Expr {
@@ -47,8 +54,8 @@ func (expst *Expression) SetExpression(ex expressions.Expr) {
 	expst.expression = ex
 }
 
-func (prnst *Print) Accept(v Visitor) {
-	v.VisitPrint(prnst)
+func (prnst *Print) Accept(v Visitor) interface{} {
+	return v.VisitPrint(prnst)
 }
 
 func (prnst *Print) Expression() expressions.Expr {
@@ -59,8 +66,8 @@ func (prnst *Print) SetExpression(ex expressions.Expr) {
 	prnst.expression = ex
 }
 
-func (varst *VarStmt) Accept(v Visitor) {
-	v.VisitVarStmt(varst)
+func (varst *VarStmt) Accept(v Visitor) interface{} {
+	return v.VisitVarStmt(varst)
 }
 
 func (varst *VarStmt) Name() *tokens.Token {
@@ -79,16 +86,44 @@ func (varst *VarStmt) SetInitializer(init expressions.Expr) {
 	varst.initializer = init
 }
 
-func (blk *Block) Accept(v Visitor) {
-	v.VisitBlock(blk)
+func (blk *Block) Accept(v Visitor) interface{} {
+	return v.VisitBlock(blk)
 }
 
 func (blk *Block) Statements() []Stmt {
 	return blk.statements
 }
 
-func (blk *Block) SetStatements(sts []Stmt) {
-	blk.statements = sts
+func (blk *Block) SetStatements(stmts []Stmt) {
+	blk.statements = stmts
+}
+
+func (ifst *If) Accept(v Visitor) interface{} {
+	return v.VisitIf(ifst)
+}
+
+func (ifst *If) Condition() expressions.Expr {
+	return ifst.condition
+}
+
+func (ifst *If) ThenBranch() Stmt {
+	return ifst.thenBranch
+}
+
+func (ifst *If) ElseBranch() Stmt {
+	return ifst.elseBranch
+}
+
+func (ifst *If) SetCondition(cnd expressions.Expr) {
+	ifst.condition = cnd
+}
+
+func (ifst *If) SetThenBranch(thbr Stmt) {
+	ifst.thenBranch = thbr
+}
+
+func (ifst *If) SetElseBranch(elbr Stmt) {
+	ifst.elseBranch = elbr
 }
 
 func NewExpression(ex expressions.Expr) *Expression {
@@ -110,8 +145,16 @@ func NewVarStmt(nm *tokens.Token, init expressions.Expr) *VarStmt {
 	}
 }
 
-func NewBlock(sts []Stmt) *Block {
+func NewBlock(stmts []Stmt) *Block {
 	return &Block{
-		statements: sts,
+		statements: stmts,
+	}
+}
+
+func NewIf(cnd expressions.Expr, thbr Stmt, elbr Stmt) *If {
+	return &If{
+		condition:  cnd,
+		thenBranch: thbr,
+		elseBranch: elbr,
 	}
 }

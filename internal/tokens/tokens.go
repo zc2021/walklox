@@ -8,7 +8,6 @@ package tokens
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -17,36 +16,42 @@ type TokenType int
 const (
 	EOF TokenType = iota
 
-	begin_single_char_toks
+	begin_delimiters
 	LEFT_PAREN  // (
 	RIGHT_PAREN // )
 	LEFT_BRACE  // {
 	RIGHT_BRACE // }
 	COMMA       // ,
 	DOT         // .
-	MINUS       // -
-	PLUS        // +
 	SEMICOLON   // ;
-	SLASH       // /
-	STAR        // *
-	end_single_char_toks
+	end_delimiters
 
-	begin_one_two_toks
-	BANG          // !
-	BANG_EQUAL    // !=
-	EQUAL         // =
-	EQUAL_EQUAL   // ==
-	GREATER       // >
-	GREATER_EQUAL // >=
-	LESS          // <
-	LESS_EQUAL    // <=
-	end_one_two_toks
-
-	begin_literal_toks
+	begin_literals
 	IDENTIFIER // a user-supplied (nonreserved) identifier
 	STRING     // a literal string
 	NUMBER     // a literal number
-	end_literal_toks
+	end_literals
+
+	begin_binary_operators
+	PLUS          // +
+	SLASH         // /
+	STAR          // *
+	EQUAL_EQUAL   // ==
+	EQUAL         // =
+	GREATER_EQUAL // >=
+	GREATER       // >
+	LESS_EQUAL    // <=
+	LESS          // <
+	BANG_EQUAL    // !=
+	end_binary_operators
+
+	begin_unary_operators
+	MINUS // -
+	end_undary_operators
+
+	begin_variadic_operators
+	BANG // !
+	end_variadic_operators
 
 	begin_reserved_keywords
 	AND    // logical and
@@ -178,141 +183,17 @@ func (t *Token) String() string {
 	return s
 }
 
-func (t *Token) SetBiFunc() error {
-	fn := binaryFuncs[t.tp]
-	if fn == nil {
-		return errors.New("Unrecognized token type for binary function.")
-	}
-	t.literal = fn
-	return nil
+func SetOp[T UnFunc | BiFunc](opfn T, tok *Token) {
+	tok.literal = opfn
+}
+
+type UnFunc func(x interface{}) interface{}
+type BiFunc func(x, y interface{}) interface{}
+
+func (t *Token) UnFunc(x interface{}) interface{} {
+	return t.literal.(UnFunc)(x)
 }
 
 func (t *Token) BiFunc(x, y interface{}) interface{} {
-	return t.literal.(biFunc)(x, y)
-}
-
-func (t *Token) SetUnFunc() error {
-	fn := unaryFuncs[t.tp]
-	if fn == nil {
-		return errors.New("Unrecognized token type for unary function.")
-	}
-	t.literal = fn
-	return nil
-}
-
-func (t *Token) UnFunc(x interface{}) interface{} {
-	return t.literal.(unFunc)(x)
-}
-
-type biFunc func(x, y interface{}) interface{}
-
-func add(x, y interface{}) interface{} {
-	n, isNum := x.(float64)
-	if !isNum {
-		return fmt.Sprintf("%s%s", x.(string), y.(string))
-	}
-	return n + y.(float64)
-}
-
-func subtract(x, y interface{}) interface{} {
-	return x.(float64) - y.(float64)
-}
-
-func divide(x, y interface{}) interface{} {
-	return x.(float64) / y.(float64)
-}
-
-func multiply(x, y interface{}) interface{} {
-	return x.(float64) * y.(float64)
-}
-
-func greater(x, y interface{}) interface{} {
-	return x.(float64) > y.(float64)
-}
-
-func less(x, y interface{}) interface{} {
-	return x.(float64) < y.(float64)
-}
-
-func greaterEq(x, y interface{}) interface{} {
-	return x.(float64) >= y.(float64)
-}
-
-func lessEq(x, y interface{}) interface{} {
-	return x.(float64) <= y.(float64)
-}
-
-func checkVal[T any](y interface{}) interface{} {
-	yt, ok := y.(T)
-	if !ok {
-		return nil
-	}
-	return yt
-}
-
-func equal(x, y interface{}) interface{} {
-	if x == nil && y == nil {
-		return true
-	}
-	if x == nil || y == nil {
-		return false
-	}
-	var yt interface{}
-	switch x.(type) {
-	case bool:
-		yt = checkVal[bool](y)
-	case float64:
-		yt = checkVal[float64](y)
-	case string:
-		yt = checkVal[string](y)
-	default:
-		return false
-	}
-	if yt == nil {
-		return false
-	}
-	return yt == x
-}
-
-func notEqual(x, y interface{}) interface{} {
-	return !equal(x, y).(bool)
-}
-
-var binaryFuncs = [...]biFunc{
-	PLUS:          add,
-	MINUS:         subtract,
-	SLASH:         divide,
-	STAR:          multiply,
-	GREATER:       greater,
-	LESS:          less,
-	GREATER_EQUAL: greaterEq,
-	LESS_EQUAL:    lessEq,
-	EQUAL_EQUAL:   equal,
-	BANG_EQUAL:    notEqual,
-}
-
-type unFunc func(x interface{}) interface{}
-
-func isTruthy(x interface{}) interface{} {
-	if x == nil {
-		return false
-	}
-	xb, ok := x.(bool)
-	if !ok {
-		return true
-	}
-	return xb
-}
-
-func isNotTruthy(x interface{}) interface{} {
-	return !isTruthy(x).(bool)
-}
-
-func negate(x interface{}) interface{} {
-	return -1 * x.(float64)
-}
-
-var unaryFuncs = [...]unFunc{
-	MINUS: negate,
-	BANG:  isNotTruthy,
+	return t.literal.(BiFunc)(x, y)
 }

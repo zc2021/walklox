@@ -2,6 +2,7 @@
 package tools
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -12,15 +13,71 @@ import (
 //go:generate go run gen_statements.go
 //go:generate gofmt -w ../statements/stmt_structs_ints.go
 
-func GenerateVisitorPkgFile(nm string, ft *PkgTemplateData, av_void bool) {
+type FieldGen func(name, param string, imp bool) FieldStr
+
+var Fields = map[string]FieldGen{
+	"token": func(name, param string, imp bool) FieldStr {
+		pkg := ""
+		if imp {
+			pkg = "tokens."
+		}
+		return FieldStr{
+			Name:  name,
+			Param: param,
+			Type:  fmt.Sprintf("*%sToken", pkg),
+		}
+	},
+	"expression": func(name, param string, imp bool) FieldStr {
+		pkg := ""
+		if imp {
+			pkg = "expressions."
+		}
+		return FieldStr{
+			Name:  name,
+			Param: param,
+			Type:  fmt.Sprintf("%sExpr", pkg),
+		}
+	},
+	"interface": func(name, param string, imp bool) FieldStr {
+		return FieldStr{
+			Name:  name,
+			Param: param,
+			Type:  "interface{}",
+		}
+	},
+	"stmt": func(name, param string, imp bool) FieldStr {
+		pkg := ""
+		if imp {
+			pkg = "statements."
+		}
+		return FieldStr{
+			Name:  name,
+			Param: param,
+			Type:  fmt.Sprintf("%sStmt", pkg),
+		}
+	},
+	"stmt_list": func(name, param string, imp bool) FieldStr {
+		pkg := ""
+		if imp {
+			pkg = "statements."
+		}
+		return FieldStr{
+			Name:  name,
+			Param: param,
+			Type:  fmt.Sprintf("[]%sStmt", pkg),
+		}
+	},
+}
+
+func GenerateVisitorPkgFile(nm string, ft *PkgTemplateData) {
 	var methods, funcs, visitSigs []FuncStr
 
 	for _, s := range ft.Structs {
-		methods = append(methods, AcceptMethod(&s, av_void))
+		methods = append(methods, AcceptMethod(&s))
 		methods = append(methods, Getters(&s)...)
 		methods = append(methods, Setters(&s)...)
 		funcs = append(funcs, ConstructorFunc(&s))
-		visitSigs = append(visitSigs, VisitSig(&s, av_void))
+		visitSigs = append(visitSigs, VisitSig(&s))
 	}
 
 	visitor := InterfaceStr{

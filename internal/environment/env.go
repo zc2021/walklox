@@ -8,24 +8,32 @@ import (
 )
 
 type Execution struct {
-	enclosing *Execution
-	values    map[string]interface{}
-	accum     *reporters.Accumulator
-	ctx       reporters.ErrCtx
+	enclosing  *Execution
+	values     map[string]interface{}
+	accum      *reporters.Accumulator
+	ctx        reporters.ErrCtx
+	unary_ops  []tokens.UnFunc
+	binary_ops []tokens.BiFunc
 }
 
 func NewGlobal() *Execution {
+	unfns, bifns := defaultOps()
 	return &Execution{
-		values: make(map[string]interface{}),
+		values:     make(map[string]interface{}),
+		unary_ops:  unfns,
+		binary_ops: bifns,
 	}
 }
 
 func (ex *Execution) Block() *Execution {
+	unfns, bifns := copyOps(ex)
 	return &Execution{
-		enclosing: ex,
-		values:    make(map[string]interface{}),
-		accum:     ex.accum,
-		ctx:       ex.ctx,
+		enclosing:  ex,
+		values:     make(map[string]interface{}),
+		accum:      ex.accum,
+		ctx:        ex.ctx,
+		unary_ops:  unfns,
+		binary_ops: bifns,
 	}
 }
 
@@ -46,6 +54,14 @@ func (ex *Execution) Define(nm string, val interface{}) {
 }
 
 func (ex *Execution) Get(vr *tokens.Token) interface{} {
+	un := ex.unary_ops[vr.ID()]
+	if un != nil {
+		return un
+	}
+	bi := ex.binary_ops[vr.ID()]
+	if bi != nil {
+		return bi
+	}
 	nm := vr.Lexeme()
 	val, set := ex.values[nm]
 	if set {
@@ -75,6 +91,6 @@ func (ex *Execution) Assign(as *expressions.Assignment, val interface{}) {
 }
 
 func (ex *Execution) undefinedVar(nm string, loc int) {
-	msg := fmt.Sprintf("Undefined variable %s referenced at %d.", nm, loc)
+	msg := fmt.Sprintf("undefined variable %s referenced at %d.", nm, loc)
 	ex.accum.AddError(loc, msg, ex.ctx)
 }

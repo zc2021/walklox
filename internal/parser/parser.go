@@ -93,7 +93,10 @@ func (p *Parser) statement() statements.Stmt {
 		return p.printStatement()
 	}
 	if p.match(tokens.LEFT_BRACE) {
-		return statements.NewBlock(p.block())
+		return p.blockStatement()
+	}
+	if p.match(tokens.IF) {
+		return p.ifStatement()
 	}
 	return p.exprStatement()
 }
@@ -104,19 +107,31 @@ func (p *Parser) printStatement() statements.Stmt {
 	return statements.NewPrint(expr)
 }
 
-func (p *Parser) exprStatement() statements.Stmt {
-	expr := p.expression()
-	p.consume(tokens.SEMICOLON, "Expect ';' after value.")
-	return statements.NewExpression(expr)
-}
-
-func (p *Parser) block() []statements.Stmt {
+func (p *Parser) blockStatement() statements.Stmt {
 	stmts := make([]statements.Stmt, 0)
 	for !p.check(tokens.RIGHT_BRACE) && !p.isAtEnd() {
 		stmts = append(stmts, p.declaration())
 	}
 	p.consume(tokens.RIGHT_BRACE, "Expect '}' after block.")
-	return stmts
+	return statements.NewBlock(stmts)
+}
+
+func (p *Parser) ifStatement() statements.Stmt {
+	p.consume(tokens.LEFT_PAREN, "Expect '(' after 'if'.")
+	condition := p.expression()
+	p.consume(tokens.RIGHT_PAREN, "Expect ')' after 'if' condition.")
+	thenBr := p.statement()
+	var elseBr statements.Stmt
+	if p.match(tokens.ELSE) {
+		elseBr = p.statement()
+	}
+	return statements.NewIf(condition, thenBr, elseBr)
+}
+
+func (p *Parser) exprStatement() statements.Stmt {
+	expr := p.expression()
+	p.consume(tokens.SEMICOLON, "Expect ';' after value.")
+	return statements.NewExpression(expr)
 }
 
 func (p *Parser) expression() expressions.Expr {

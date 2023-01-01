@@ -46,30 +46,31 @@ const (
 	end_binary_operators
 
 	begin_unary_operators
-	MINUS // -
+	BANG // !
 	end_undary_operators
 
 	begin_variadic_operators
-	BANG // !
+	MINUS // -
 	end_variadic_operators
 
 	begin_reserved_keywords
-	AND    // logical and
-	CLASS  // opens class definition block
-	ELSE   // opens control flow if-block else branch
-	FALSE  // boolean false
-	FUN    // opens function definition block
-	FOR    // opens control flow for loop block
-	IF     // opens control flow if block
 	NIL    // empty value
+	AND    // logical and
 	OR     // logical or
-	PRINT  // call to fundamental native print function
-	RETURN // begins return statement
-	SUPER  // call parent class method on child class instance
-	THIS   // refers to current object within a method definition
 	TRUE   // boolean true
+	FALSE  // boolean false
 	VAR    // begin variable declaration statement
+	CLASS  // opens class definition block
+	SUPER  // call parent class method on child class instance
+	FUN    // opens function definition block
+	RETURN // begins return statement
+	THIS   // refers to current object within a method definition
+	IF     // opens control flow if block
+	ELSE   // opens control flow if-block else branch
+	FOR    // opens control flow for loop block
 	WHILE  // opens control flow while loop block
+	BREAK  // exits current control flow structure
+	PRINT  // call to fundamental native print function
 	end_reserved_keywords
 )
 
@@ -117,6 +118,7 @@ var tokens = [...]string{
 	TRUE:   "TRUE",
 	VAR:    "VAR",
 	WHILE:  "WHILE",
+	BREAK:  "BREAK",
 }
 
 var Keywords = map[string]TokenType{
@@ -136,6 +138,7 @@ var Keywords = map[string]TokenType{
 	"true":   TRUE,
 	"var":    VAR,
 	"while":  WHILE,
+	"break":  BREAK,
 }
 
 func (tid TokenType) Valid() bool {

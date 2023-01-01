@@ -12,8 +12,8 @@ import (
 const CTX = reporters.INTERPRETING
 
 type Interpreter struct {
-	accum   *reporters.Accumulator
 	env     *environment.Execution
+	accum   *reporters.Accumulator
 	Printer *reporters.PrettyPrinter
 }
 
@@ -49,8 +49,23 @@ func stringify(val interface{}) string {
 	}
 }
 
-func biMsg(tp, loc string, val *tokens.Token) string {
-	return fmt.Sprintf("expect a %s %s %s", tp, loc, val)
+func (i *Interpreter) VisitCall(cl *expressions.Call) interface{} {
+	loc := cl.Paren().Line()
+	callee := i.evaluate(cl.Callee())
+	args := make([]interface{}, 0)
+	for _, a := range cl.Arguments() {
+		args = append(args, i.evaluate(a))
+	}
+	fn, ok := callee.(callable)
+	if !ok {
+		i.accum.AddError(loc, "attempt to call uncallable entity", CTX)
+		return nil
+	}
+	if fn.arity() != len(args) {
+		arityMsg := fmt.Sprintf("%d arguments", fn.arity())
+		i.accum.AddError(loc, reporters.Expectation(arityMsg, "in", "call"), CTX)
+	}
+	return fn.call(i, args)
 }
 
 func (i *Interpreter) VisitBinary(bi *expressions.Binary) interface{} {
@@ -62,9 +77,9 @@ func (i *Interpreter) VisitBinary(bi *expressions.Binary) interface{} {
 	}
 	lf := i.evaluate(bi.Left())
 	rt := i.evaluate(bi.Right())
-	lfMsgNum := biMsg("number", "before", bi.Operator())
-	rtMsgNum := biMsg("number", "after", bi.Operator())
-	rtMsgStr := biMsg("string", "after", bi.Operator())
+	lfMsgNum := reporters.Expectation("a number", "before", bi.Operator().String())
+	rtMsgNum := reporters.Expectation("a number", "after", bi.Operator().String())
+	rtMsgStr := reporters.Expectation("a string", "after", bi.Operator().String())
 	if bi.Operator().ID() == tokens.PLUS {
 		lstr, ok := lf.(string)
 		if ok {
@@ -94,7 +109,7 @@ func (i *Interpreter) VisitUnary(un *expressions.Unary) interface{} {
 		return nil
 	}
 	rt := i.evaluate(un.Right())
-	rtMsgNum := fmt.Sprintf("expect a number after %s", un.Operator().String())
+	rtMsgNum := reporters.Expectation("a number", "after", un.Operator().String())
 	if un.Operator().ID() == tokens.MINUS {
 		_, ok := i.checkNum(rt, opLoc, rtMsgNum)
 		if !ok {
@@ -141,9 +156,8 @@ func (i *Interpreter) VisitExpression(expst *statements.Expression) interface{} 
 }
 
 func (i *Interpreter) VisitPrint(prnst *statements.Print) interface{} {
-	err := i.accum.LastError()
 	val := i.evaluate(prnst.Expression())
-	if i.accum.LastError() != err {
+	if i.accum.HasErrors() {
 		return nil
 	}
 	fmt.Println(stringify(val))
@@ -176,6 +190,21 @@ func (i *Interpreter) VisitIf(ifst *statements.If) interface{} {
 	return val
 }
 
+func (i *Interpreter) VisitWhile(whst *statements.While) interface{} {
+	var val interface{}
+	for environment.IsTruthy(i.evaluate(whst.Condition())).(bool) {
+		val = i.execute(whst.Body())
+		if i.checkBreak(val) {
+			break
+		}
+	}
+	return val
+}
+
+func (i *Interpreter) VisitBreak(brkst *statements.Break) interface{} {
+	return brkst.Tok()
+}
+
 func (i *Interpreter) checkNum(x interface{}, loc int, msg string) (float64, bool) {
 	n, ok := x.(float64)
 	if !ok {
@@ -194,6 +223,14 @@ func (i *Interpreter) checkStr(x interface{}, loc int, msg string) (string, bool
 	return s, true
 }
 
+func (i *Interpreter) checkBreak(x interface{}) bool {
+	tok, ok := x.(*tokens.Token)
+	if !ok {
+		return false
+	}
+	return tok.ID() == tokens.BREAK
+}
+
 func (i *Interpreter) evaluate(e expressions.Expr) interface{} {
 	return e.Accept(i)
 }
@@ -204,10 +241,9 @@ func (i *Interpreter) execute(s statements.Stmt) interface{} {
 
 func (i *Interpreter) executeBlock(stmts []statements.Stmt) interface{} {
 	var val interface{}
-	err := i.accum.LastError()
 	for _, stmt := range stmts {
 		val = i.execute(stmt)
-		if i.accum.LastError() != err {
+		if i.accum.HasErrors() {
 			break
 		}
 	}

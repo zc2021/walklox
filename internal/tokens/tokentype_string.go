@@ -36,34 +36,35 @@ func _() {
 	_ = x[BANG_EQUAL-25]
 	_ = x[end_binary_operators-26]
 	_ = x[begin_unary_operators-27]
-	_ = x[MINUS-28]
+	_ = x[BANG-28]
 	_ = x[end_undary_operators-29]
 	_ = x[begin_variadic_operators-30]
-	_ = x[BANG-31]
+	_ = x[MINUS-31]
 	_ = x[end_variadic_operators-32]
 	_ = x[begin_reserved_keywords-33]
-	_ = x[AND-34]
-	_ = x[CLASS-35]
-	_ = x[ELSE-36]
-	_ = x[FALSE-37]
-	_ = x[FUN-38]
-	_ = x[FOR-39]
-	_ = x[IF-40]
-	_ = x[NIL-41]
-	_ = x[OR-42]
-	_ = x[PRINT-43]
-	_ = x[RETURN-44]
-	_ = x[SUPER-45]
-	_ = x[THIS-46]
-	_ = x[TRUE-47]
-	_ = x[VAR-48]
-	_ = x[WHILE-49]
-	_ = x[end_reserved_keywords-50]
+	_ = x[NIL-34]
+	_ = x[AND-35]
+	_ = x[OR-36]
+	_ = x[TRUE-37]
+	_ = x[FALSE-38]
+	_ = x[VAR-39]
+	_ = x[CLASS-40]
+	_ = x[SUPER-41]
+	_ = x[FUN-42]
+	_ = x[RETURN-43]
+	_ = x[THIS-44]
+	_ = x[IF-45]
+	_ = x[ELSE-46]
+	_ = x[FOR-47]
+	_ = x[WHILE-48]
+	_ = x[BREAK-49]
+	_ = x[PRINT-50]
+	_ = x[end_reserved_keywords-51]
 }
 
-const _TokenType_name = "EOFbegin_delimitersLEFT_PARENRIGHT_PARENLEFT_BRACERIGHT_BRACECOMMADOTSEMICOLONend_delimitersbegin_literalsIDENTIFIERSTRINGNUMBERend_literalsbegin_binary_operatorsPLUSSLASHSTAREQUAL_EQUALEQUALGREATER_EQUALGREATERLESS_EQUALLESSBANG_EQUALend_binary_operatorsbegin_unary_operatorsMINUSend_undary_operatorsbegin_variadic_operatorsBANGend_variadic_operatorsbegin_reserved_keywordsANDCLASSELSEFALSEFUNFORIFNILORPRINTRETURNSUPERTHISTRUEVARWHILEend_reserved_keywords"
+const _TokenType_name = "EOFbegin_delimitersLEFT_PARENRIGHT_PARENLEFT_BRACERIGHT_BRACECOMMADOTSEMICOLONend_delimitersbegin_literalsIDENTIFIERSTRINGNUMBERend_literalsbegin_binary_operatorsPLUSSLASHSTAREQUAL_EQUALEQUALGREATER_EQUALGREATERLESS_EQUALLESSBANG_EQUALend_binary_operatorsbegin_unary_operatorsBANGend_undary_operatorsbegin_variadic_operatorsMINUSend_variadic_operatorsbegin_reserved_keywordsNILANDORTRUEFALSEVARCLASSSUPERFUNRETURNTHISIFELSEFORWHILEBREAKPRINTend_reserved_keywords"
 
-var _TokenType_index = [...]uint16{0, 3, 19, 29, 40, 50, 61, 66, 69, 78, 92, 106, 116, 122, 128, 140, 162, 166, 171, 175, 186, 191, 204, 211, 221, 225, 235, 255, 276, 281, 301, 325, 329, 351, 374, 377, 382, 386, 391, 394, 397, 399, 402, 404, 409, 415, 420, 424, 428, 431, 436, 457}
+var _TokenType_index = [...]uint16{0, 3, 19, 29, 40, 50, 61, 66, 69, 78, 92, 106, 116, 122, 128, 140, 162, 166, 171, 175, 186, 191, 204, 211, 221, 225, 235, 255, 276, 280, 300, 324, 329, 351, 374, 377, 380, 382, 386, 391, 394, 399, 404, 407, 413, 417, 419, 423, 426, 431, 436, 441, 462}
 
 func (i TokenType) String() string {
 	if i < 0 || i >= TokenType(len(_TokenType_index)-1) {

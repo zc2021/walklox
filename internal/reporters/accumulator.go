@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
 type Accumulator struct {
@@ -110,4 +111,8 @@ func (a *Accumulator) PrintComments() {
 
 func report(w io.Writer, i interface{}) {
 	fmt.Fprintln(w, i)
+}
+
+func Expectation(thing, rel_position, rel_to string) string {
+	return strings.TrimSpace(fmt.Sprintf("expect %s %s %s", thing, rel_position, rel_to))
 }

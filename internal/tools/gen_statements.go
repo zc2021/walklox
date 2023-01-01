@@ -11,7 +11,7 @@ func main() {
 		Name:  "Expression",
 		Param: "expst",
 		Fields: []tools.FieldStr{
-			tools.Fields["expression"]("expression", "ex", true),
+			tools.Fields["expression"]("expression", "ex", true, false),
 		},
 	}
 
@@ -19,7 +19,7 @@ func main() {
 		Name:  "Print",
 		Param: "prnst",
 		Fields: []tools.FieldStr{
-			tools.Fields["expression"]("expression", "ex", true),
+			tools.Fields["expression"]("expression", "ex", true, false),
 		},
 	}
 
@@ -27,8 +27,8 @@ func main() {
 		Name:  "VarStmt",
 		Param: "varst",
 		Fields: []tools.FieldStr{
-			tools.Fields["token"]("name", "nm", true),
-			tools.Fields["expression"]("initializer", "init", true),
+			tools.Fields["token"]("name", "nm", true, false),
+			tools.Fields["expression"]("initializer", "init", true, false),
 		},
 	}
 
@@ -36,7 +36,7 @@ func main() {
 		Name:  "Block",
 		Param: "blk",
 		Fields: []tools.FieldStr{
-			tools.Fields["stmt_list"]("statements", "stmts", false),
+			tools.Fields["stmt"]("statements", "stmts", false, true),
 		},
 	}
 
@@ -44,11 +44,39 @@ func main() {
 		Name:  "If",
 		Param: "ifst",
 		Fields: []tools.FieldStr{
-			tools.Fields["expression"]("condition", "cnd", true),
-			tools.Fields["stmt"]("thenBranch", "thbr", false),
-			tools.Fields["stmt"]("elseBranch", "elbr", false),
+			tools.Fields["expression"]("condition", "cnd", true, false),
+			tools.Fields["stmt"]("thenBranch", "thbr", false, false),
+			tools.Fields["stmt"]("elseBranch", "elbr", false, false),
 		},
 	}
+
+	whileStmt := tools.StructStr{
+		Name:  "While",
+		Param: "whst",
+		Fields: []tools.FieldStr{
+			tools.Fields["expression"]("condition", "cnd", true, false),
+			tools.Fields["stmt"]("body", "bd", false, false),
+		},
+	}
+
+	brk := tools.StructStr{
+		Name:  "Break",
+		Param: "brkst",
+		Fields: []tools.FieldStr{
+			tools.Fields["token"]("tok", "tk", true, false),
+		},
+	}
+
+	statement_types := []tools.StructStr{
+		expr,
+		prn,
+		varStmt,
+		block,
+		conditional,
+		whileStmt,
+		brk,
+	}
+	imps := []string{"devZ/lox/internal/expressions", "devZ/lox/internal/tokens"}
 
 	statement := tools.InterfaceStr{
 		Name: "Stmt",
@@ -60,9 +88,6 @@ func main() {
 			},
 		},
 	}
-
-	statement_types := []tools.StructStr{expr, prn, varStmt, block, conditional}
-	imps := []string{"devZ/lox/internal/expressions", "devZ/lox/internal/tokens"}
 
 	pkgInfo := tools.PkgTemplateData{
 		Package:    "statements",

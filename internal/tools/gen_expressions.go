@@ -11,9 +11,9 @@ func main() {
 		Name:  "Binary",
 		Param: "bi",
 		Fields: []tools.FieldStr{
-			tools.Fields["expression"]("left", "lf", false),
-			tools.Fields["token"]("operator", "op", true),
-			tools.Fields["expression"]("right", "rt", false),
+			tools.Fields["expression"]("left", "lf", false, false),
+			tools.Fields["token"]("operator", "op", true, false),
+			tools.Fields["expression"]("right", "rt", false, false),
 		},
 	}
 
@@ -21,7 +21,7 @@ func main() {
 		Name:  "Grouping",
 		Param: "gr",
 		Fields: []tools.FieldStr{
-			tools.Fields["expression"]("expression", "ex", false),
+			tools.Fields["expression"]("expression", "ex", false, false),
 		},
 	}
 
@@ -29,7 +29,7 @@ func main() {
 		Name:  "Literal",
 		Param: "li",
 		Fields: []tools.FieldStr{
-			tools.Fields["interface"]("value", "val", false),
+			tools.Fields["interface"]("value", "val", false, false),
 		},
 	}
 
@@ -37,8 +37,8 @@ func main() {
 		Name:  "Unary",
 		Param: "un",
 		Fields: []tools.FieldStr{
-			tools.Fields["token"]("operator", "op", true),
-			tools.Fields["expression"]("right", "rt", false),
+			tools.Fields["token"]("operator", "op", true, false),
+			tools.Fields["expression"]("right", "rt", false, false),
 		},
 	}
 
@@ -46,7 +46,7 @@ func main() {
 		Name:  "VarExpr",
 		Param: "vr",
 		Fields: []tools.FieldStr{
-			tools.Fields["token"]("name", "nm", true),
+			tools.Fields["token"]("name", "nm", true, false),
 		},
 	}
 
@@ -54,8 +54,8 @@ func main() {
 		Name:  "Assignment",
 		Param: "as",
 		Fields: []tools.FieldStr{
-			tools.Fields["token"]("name", "nm", true),
-			tools.Fields["expression"]("value", "vl", false),
+			tools.Fields["token"]("name", "nm", true, false),
+			tools.Fields["expression"]("value", "vl", false, false),
 		},
 	}
 
@@ -63,9 +63,19 @@ func main() {
 		Name:  "Logical",
 		Param: "lg",
 		Fields: []tools.FieldStr{
-			tools.Fields["expression"]("left", "lf", false),
-			tools.Fields["token"]("operator", "op", true),
-			tools.Fields["expression"]("right", "rt", false),
+			tools.Fields["expression"]("left", "lf", false, false),
+			tools.Fields["token"]("operator", "op", true, false),
+			tools.Fields["expression"]("right", "rt", false, false),
+		},
+	}
+
+	call := tools.StructStr{
+		Name:  "Call",
+		Param: "cl",
+		Fields: []tools.FieldStr{
+			tools.Fields["expression"]("callee", "cle", false, false),
+			tools.Fields["token"]("paren", "pn", true, false),
+			tools.Fields["expression"]("arguments", "args", false, true),
 		},
 	}
 
@@ -77,6 +87,7 @@ func main() {
 		variable,
 		assignment,
 		logical,
+		call,
 	}
 
 	expression := tools.InterfaceStr{

@@ -91,6 +91,6 @@ func (ex *Execution) Assign(as *expressions.Assignment, val interface{}) {
 }
 
 func (ex *Execution) undefinedVar(nm string, loc int) {
-	msg := fmt.Sprintf("undefined variable %s referenced at %d.", nm, loc)
+	msg := fmt.Sprintf("undefined variable %s referenced", nm)
 	ex.accum.AddError(loc, msg, ex.ctx)
 }

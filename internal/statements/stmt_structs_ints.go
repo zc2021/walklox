@@ -17,6 +17,8 @@ type Visitor interface {
 	VisitVarStmt(varst *VarStmt) interface{}
 	VisitBlock(blk *Block) interface{}
 	VisitIf(ifst *If) interface{}
+	VisitWhile(whst *While) interface{}
+	VisitBreak(brkst *Break) interface{}
 }
 
 type Expression struct {
@@ -40,6 +42,15 @@ type If struct {
 	condition  expressions.Expr
 	thenBranch Stmt
 	elseBranch Stmt
+}
+
+type While struct {
+	condition expressions.Expr
+	body      Stmt
+}
+
+type Break struct {
+	tok *tokens.Token
 }
 
 func (expst *Expression) Accept(v Visitor) interface{} {
@@ -126,6 +137,38 @@ func (ifst *If) SetElseBranch(elbr Stmt) {
 	ifst.elseBranch = elbr
 }
 
+func (whst *While) Accept(v Visitor) interface{} {
+	return v.VisitWhile(whst)
+}
+
+func (whst *While) Condition() expressions.Expr {
+	return whst.condition
+}
+
+func (whst *While) Body() Stmt {
+	return whst.body
+}
+
+func (whst *While) SetCondition(cnd expressions.Expr) {
+	whst.condition = cnd
+}
+
+func (whst *While) SetBody(bd Stmt) {
+	whst.body = bd
+}
+
+func (brkst *Break) Accept(v Visitor) interface{} {
+	return v.VisitBreak(brkst)
+}
+
+func (brkst *Break) Tok() *tokens.Token {
+	return brkst.tok
+}
+
+func (brkst *Break) SetTok(tk *tokens.Token) {
+	brkst.tok = tk
+}
+
 func NewExpression(ex expressions.Expr) *Expression {
 	return &Expression{
 		expression: ex,
@@ -156,5 +199,18 @@ func NewIf(cnd expressions.Expr, thbr Stmt, elbr Stmt) *If {
 		condition:  cnd,
 		thenBranch: thbr,
 		elseBranch: elbr,
+	}
+}
+
+func NewWhile(cnd expressions.Expr, bd Stmt) *While {
+	return &While{
+		condition: cnd,
+		body:      bd,
+	}
+}
+
+func NewBreak(tk *tokens.Token) *Break {
+	return &Break{
+		tok: tk,
 	}
 }

@@ -13,59 +13,66 @@ import (
 //go:generate go run gen_statements.go
 //go:generate gofmt -w ../statements/stmt_structs_ints.go
 
-type FieldGen func(name, param string, imp bool) FieldStr
+type FieldGen func(name, param string, impt, list bool) FieldStr
+
+func bare(name, param, tp string) FieldStr {
+	return FieldStr{
+		Name:  name,
+		Param: param,
+		Type:  tp,
+	}
+}
+
+func sgl(name, param, pkg, tp string) FieldStr {
+	tp = fmt.Sprintf("%s%s", pkg, tp)
+	return bare(name, param, tp)
+}
+
+func list(name, param, pkg, tp string) FieldStr {
+	tp = fmt.Sprintf("[]%s%s", pkg, tp)
+	return bare(name, param, tp)
+}
 
 var Fields = map[string]FieldGen{
-	"token": func(name, param string, imp bool) FieldStr {
-		pkg := ""
-		if imp {
-			pkg = "tokens."
+	"token": func(name, param string, impt, lst bool) FieldStr {
+		pkg := "*"
+		if impt {
+			pkg = "*tokens."
 		}
-		return FieldStr{
-			Name:  name,
-			Param: param,
-			Type:  fmt.Sprintf("*%sToken", pkg),
+		tp := "Token"
+		if lst {
+			return list(name, param, pkg, tp)
 		}
+		return sgl(name, param, pkg, tp)
 	},
-	"expression": func(name, param string, imp bool) FieldStr {
+	"expression": func(name, param string, impt, lst bool) FieldStr {
 		pkg := ""
-		if imp {
+		if impt {
 			pkg = "expressions."
 		}
-		return FieldStr{
-			Name:  name,
-			Param: param,
-			Type:  fmt.Sprintf("%sExpr", pkg),
+		tp := "Expr"
+		if lst {
+			return list(name, param, pkg, tp)
 		}
+		return sgl(name, param, pkg, tp)
 	},
-	"interface": func(name, param string, imp bool) FieldStr {
-		return FieldStr{
-			Name:  name,
-			Param: param,
-			Type:  "interface{}",
+	"interface": func(name, param string, imp, lst bool) FieldStr {
+		tp := "interface{}"
+		if lst {
+			return list(name, param, "", tp)
 		}
+		return bare(name, param, tp)
 	},
-	"stmt": func(name, param string, imp bool) FieldStr {
+	"stmt": func(name, param string, imp, lst bool) FieldStr {
 		pkg := ""
 		if imp {
 			pkg = "statements."
 		}
-		return FieldStr{
-			Name:  name,
-			Param: param,
-			Type:  fmt.Sprintf("%sStmt", pkg),
+		tp := "Stmt"
+		if lst {
+			return list(name, param, pkg, tp)
 		}
-	},
-	"stmt_list": func(name, param string, imp bool) FieldStr {
-		pkg := ""
-		if imp {
-			pkg = "statements."
-		}
-		return FieldStr{
-			Name:  name,
-			Param: param,
-			Type:  fmt.Sprintf("[]%sStmt", pkg),
-		}
+		return sgl(name, param, pkg, tp)
 	},
 }
 

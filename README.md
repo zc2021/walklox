@@ -24,9 +24,9 @@ An individual token is implemented as a struct with fields for token type, sourc
 
 Go's answer to Java's `enum` type is the `const iota` identifier; its use, along with the aliased `int` type `TokenType`, as a value for token "type" in GWLox's package tokens is directly inspired by the Go source.
 
-A Token has no exported fields and minimal setters, to reflect the `final` keyword used in the canonical class definition.
+A Token has no exported fields and minimal setters, to reflect the use `final` of in the canonical class definition.
 
-Setters are available only to assign function values to a Token's `literal` field. 
+
 
 [^cmdnote]: When invoked from the command line with: 
     - more than one argument, the program prints a usage hint to stdout and exits; 

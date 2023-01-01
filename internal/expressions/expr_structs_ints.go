@@ -18,6 +18,7 @@ type Visitor interface {
 	VisitVarExpr(vr *VarExpr) interface{}
 	VisitAssignment(as *Assignment) interface{}
 	VisitLogical(lg *Logical) interface{}
+	VisitCall(cl *Call) interface{}
 }
 
 type Binary struct {
@@ -52,6 +53,12 @@ type Logical struct {
 	left     Expr
 	operator *tokens.Token
 	right    Expr
+}
+
+type Call struct {
+	callee    Expr
+	paren     *tokens.Token
+	arguments []Expr
 }
 
 func (bi *Binary) Accept(v Visitor) interface{} {
@@ -186,6 +193,34 @@ func (lg *Logical) SetRight(rt Expr) {
 	lg.right = rt
 }
 
+func (cl *Call) Accept(v Visitor) interface{} {
+	return v.VisitCall(cl)
+}
+
+func (cl *Call) Callee() Expr {
+	return cl.callee
+}
+
+func (cl *Call) Paren() *tokens.Token {
+	return cl.paren
+}
+
+func (cl *Call) Arguments() []Expr {
+	return cl.arguments
+}
+
+func (cl *Call) SetCallee(cle Expr) {
+	cl.callee = cle
+}
+
+func (cl *Call) SetParen(pn *tokens.Token) {
+	cl.paren = pn
+}
+
+func (cl *Call) SetArguments(args []Expr) {
+	cl.arguments = args
+}
+
 func NewBinary(lf Expr, op *tokens.Token, rt Expr) *Binary {
 	return &Binary{
 		left:     lf,
@@ -231,5 +266,13 @@ func NewLogical(lf Expr, op *tokens.Token, rt Expr) *Logical {
 		left:     lf,
 		operator: op,
 		right:    rt,
+	}
+}
+
+func NewCall(cle Expr, pn *tokens.Token, args []Expr) *Call {
+	return &Call{
+		callee:    cle,
+		paren:     pn,
+		arguments: args,
 	}
 }

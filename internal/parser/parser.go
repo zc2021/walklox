@@ -10,10 +10,11 @@ import (
 const CTX = reporters.PARSING
 
 type Parser struct {
-	tokens  []*tokens.Token
-	current int
-	accum   *reporters.Accumulator
-	Printer *reporters.PrettyPrinter
+	tokens   []*tokens.Token
+	current  int
+	loop_lvl int
+	accum    *reporters.Accumulator
+	Printer  *reporters.PrettyPrinter
 }
 
 func New(tks []*tokens.Token, a *reporters.Accumulator) *Parser {
@@ -66,12 +67,13 @@ func (p *Parser) match(tids ...tokens.TokenType) bool {
 
 func (p *Parser) declaration() statements.Stmt {
 	var stmt statements.Stmt
+	err := p.accum.LastError()
 	if p.match(tokens.VAR) {
 		stmt = p.varDeclaration()
 	} else {
 		stmt = p.statement()
 	}
-	if p.accum.HasErrors() {
+	if p.accum.LastError() != err {
 		p.synchronize()
 		return nil
 	}
@@ -79,31 +81,90 @@ func (p *Parser) declaration() statements.Stmt {
 }
 
 func (p *Parser) varDeclaration() statements.Stmt {
-	name := p.consume(tokens.IDENTIFIER, "Expect variable name.")
+	name := p.consume(tokens.IDENTIFIER, reporters.Expectation("a variable name", "after", "var"))
 	var initializer expressions.Expr
 	if p.match(tokens.EQUAL) {
 		initializer = p.expression()
 	}
-	p.consume(tokens.SEMICOLON, "Expect ';' after variable declaration.")
+	p.consume(tokens.SEMICOLON, reporters.Expectation("';'", "after", "variable declaration"))
 	return statements.NewVarStmt(name, initializer)
 }
 
+func (p *Parser) loopStatement() statements.Stmt {
+	p.loop_lvl += 1
+	stmt := p.statement()
+	p.loop_lvl -= 1
+	return stmt
+}
+
 func (p *Parser) statement() statements.Stmt {
+	if p.match(tokens.BREAK) {
+		if p.loop_lvl > 0 {
+			return p.breakStatement()
+		}
+		p.error("'break' outside of loop body")
+		return nil
+	}
+	if p.match(tokens.FOR) {
+		return p.forStatement()
+	}
+	if p.match(tokens.IF) {
+		return p.ifStatement()
+	}
+	if p.match(tokens.WHILE) {
+		return p.whileStatement()
+	}
 	if p.match(tokens.PRINT) {
 		return p.printStatement()
 	}
 	if p.match(tokens.LEFT_BRACE) {
 		return p.blockStatement()
 	}
-	if p.match(tokens.IF) {
-		return p.ifStatement()
-	}
 	return p.exprStatement()
+}
+
+func (p *Parser) breakStatement() statements.Stmt {
+	tok := p.previous()
+	p.consume(tokens.SEMICOLON, reporters.Expectation("';'", "after", "'break'"))
+	return statements.NewBreak(tok)
+}
+
+func (p *Parser) forStatement() statements.Stmt {
+	p.consume(tokens.LEFT_PAREN, reporters.Expectation("'('", "after", "'for'"))
+	var init statements.Stmt
+	if p.match(tokens.SEMICOLON) {
+		init = nil
+	} else if p.match(tokens.VAR) {
+		init = p.varDeclaration()
+	} else {
+		init = p.exprStatement()
+	}
+	var cnd, incr expressions.Expr
+	if !p.check(tokens.SEMICOLON) {
+		cnd = p.expression()
+	}
+	p.consume(tokens.SEMICOLON, reporters.Expectation("';'", "after", "loop condition"))
+	if !p.check(tokens.RIGHT_PAREN) {
+		incr = p.expression()
+	}
+	p.consume(tokens.RIGHT_PAREN, reporters.Expectation("')'", "after", "for clauses"))
+	bd := p.loopStatement()
+	if incr != nil {
+		bd = statements.NewBlock([]statements.Stmt{bd, statements.NewExpression(incr)})
+	}
+	if cnd == nil {
+		cnd = expressions.NewLiteral(true)
+	}
+	bd = statements.NewWhile(cnd, bd)
+	if init != nil {
+		bd = statements.NewBlock([]statements.Stmt{init, bd})
+	}
+	return bd
 }
 
 func (p *Parser) printStatement() statements.Stmt {
 	expr := p.expression()
-	p.consume(tokens.SEMICOLON, "Expect ';' after value.")
+	p.consume(tokens.SEMICOLON, reporters.Expectation("';'", "after", "value"))
 	return statements.NewPrint(expr)
 }
 
@@ -112,14 +173,14 @@ func (p *Parser) blockStatement() statements.Stmt {
 	for !p.check(tokens.RIGHT_BRACE) && !p.isAtEnd() {
 		stmts = append(stmts, p.declaration())
 	}
-	p.consume(tokens.RIGHT_BRACE, "Expect '}' after block.")
+	p.consume(tokens.RIGHT_BRACE, reporters.Expectation("'}'", "after", "block"))
 	return statements.NewBlock(stmts)
 }
 
 func (p *Parser) ifStatement() statements.Stmt {
-	p.consume(tokens.LEFT_PAREN, "Expect '(' after 'if'.")
+	p.consume(tokens.LEFT_PAREN, reporters.Expectation("'('", "after", "if"))
 	condition := p.expression()
-	p.consume(tokens.RIGHT_PAREN, "Expect ')' after 'if' condition.")
+	p.consume(tokens.RIGHT_PAREN, reporters.Expectation("')'", "after", "if condition"))
 	thenBr := p.statement()
 	var elseBr statements.Stmt
 	if p.match(tokens.ELSE) {
@@ -128,9 +189,17 @@ func (p *Parser) ifStatement() statements.Stmt {
 	return statements.NewIf(condition, thenBr, elseBr)
 }
 
+func (p *Parser) whileStatement() statements.Stmt {
+	p.consume(tokens.LEFT_PAREN, reporters.Expectation("'('", "after", "while"))
+	cnd := p.expression()
+	p.consume(tokens.RIGHT_PAREN, reporters.Expectation("')'", "after", "while condition"))
+	bd := p.loopStatement()
+	return statements.NewWhile(cnd, bd)
+}
+
 func (p *Parser) exprStatement() statements.Stmt {
 	expr := p.expression()
-	p.consume(tokens.SEMICOLON, "Expect ';' after value.")
+	p.consume(tokens.SEMICOLON, reporters.Expectation("';'", "after", "expression"))
 	return statements.NewExpression(expr)
 }
 
@@ -147,7 +216,7 @@ func (p *Parser) assignment() expressions.Expr {
 		if ok {
 			return expressions.NewAssignment(exVar.Name(), val)
 		}
-		p.accum.AddError(eqs.Line(), "Invalid assignment target.", CTX)
+		p.errorAt("invalid assignment target", eqs.Line())
 	}
 	return expr
 }
@@ -208,7 +277,34 @@ func (p *Parser) unary() expressions.Expr {
 		right := p.unary()
 		return expressions.NewUnary(op, right)
 	}
-	return p.primary()
+	return p.call()
+}
+
+func (p *Parser) call() expressions.Expr {
+	expr := p.primary()
+	for true {
+		if p.match(tokens.LEFT_PAREN) {
+			expr = p.finishCall(expr)
+		} else {
+			break
+		}
+	}
+	return expr
+}
+
+func (p *Parser) finishCall(cle expressions.Expr) expressions.Expr {
+	args := make([]expressions.Expr, 0)
+	if !p.check(tokens.RIGHT_PAREN) {
+		args = append(args, p.expression())
+		for p.match(tokens.COMMA) {
+			args = append(args, p.expression())
+			if len(args) >= 255 {
+				p.error("call cannot have more than 255 arguments")
+			}
+		}
+	}
+	paren := p.consume(tokens.LEFT_PAREN, reporters.Expectation("')", "after", "arguments"))
+	return expressions.NewCall(cle, paren, args)
 }
 
 func (p *Parser) primary() expressions.Expr {
@@ -229,10 +325,10 @@ func (p *Parser) primary() expressions.Expr {
 	}
 	if p.match(tokens.LEFT_PAREN) {
 		ex := p.expression()
-		p.consume(tokens.RIGHT_PAREN, "Expect ')' after expression.")
+		p.consume(tokens.RIGHT_PAREN, reporters.Expectation("')'", "after", "expression"))
 		return ex
 	}
-	p.error("Expect expression.")
+	p.error(reporters.Expectation("expression", "", ""))
 	return nil
 }
 
@@ -245,7 +341,11 @@ func (p *Parser) consume(tid tokens.TokenType, msg string) *tokens.Token {
 }
 
 func (p *Parser) error(msg string) {
-	p.accum.AddError(p.peek().Line(), msg, CTX)
+	p.errorAt(msg, p.peek().Line())
+}
+
+func (p *Parser) errorAt(msg string, loc int) {
+	p.accum.AddError(loc, msg, CTX)
 }
 
 func (p *Parser) synchronize() {

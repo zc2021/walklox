@@ -12,6 +12,7 @@ import (
 const CTX = reporters.INTERPRETING
 
 type Interpreter struct {
+	globals *environment.Execution
 	env     *environment.Execution
 	accum   *reporters.Accumulator
 	Printer *reporters.PrettyPrinter
@@ -20,9 +21,11 @@ type Interpreter struct {
 func New(a *reporters.Accumulator, e *environment.Execution) *Interpreter {
 	e.SetCtx(CTX)
 	e.SetAccum(a)
+	e.Define("clock", &clock{})
 	return &Interpreter{
-		accum: a,
-		env:   e,
+		accum:   a,
+		env:     e,
+		globals: e,
 	}
 }
 
@@ -155,6 +158,12 @@ func (i *Interpreter) VisitExpression(expst *statements.Expression) interface{} 
 	return i.evaluate(expst.Expression())
 }
 
+func (i *Interpreter) VisitFunction(fnst *statements.Function) interface{} {
+	fn := newFunc(fnst, i)
+	i.env.Define(fn.declaration.Name().Lexeme(), fn)
+	return nil
+}
+
 func (i *Interpreter) VisitPrint(prnst *statements.Print) interface{} {
 	val := i.evaluate(prnst.Expression())
 	if i.accum.HasErrors() {
@@ -247,5 +256,13 @@ func (i *Interpreter) executeBlock(stmts []statements.Stmt) interface{} {
 			break
 		}
 	}
+	return val
+}
+
+func (i *Interpreter) executeBlockIn(stmts []statements.Stmt, block_env *environment.Execution) interface{} {
+	prev := i.env
+	i.env = block_env
+	val := i.executeBlock(stmts)
+	i.env = prev
 	return val
 }

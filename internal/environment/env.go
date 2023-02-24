@@ -25,6 +25,15 @@ func NewGlobal() *Execution {
 	}
 }
 
+func Copy(e *Execution) *Execution {
+	unfns, bifns := copyOps(e)
+	return &Execution{
+		values:     make(map[string]interface{}),
+		unary_ops:  unfns,
+		binary_ops: bifns,
+	}
+}
+
 func (ex *Execution) Block() *Execution {
 	unfns, bifns := copyOps(ex)
 	return &Execution{

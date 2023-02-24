@@ -15,6 +15,7 @@ type Visitor interface {
 	VisitExpression(expst *Expression) interface{}
 	VisitPrint(prnst *Print) interface{}
 	VisitVarStmt(varst *VarStmt) interface{}
+	VisitFunction(fn *Function) interface{}
 	VisitBlock(blk *Block) interface{}
 	VisitIf(ifst *If) interface{}
 	VisitWhile(whst *While) interface{}
@@ -32,6 +33,12 @@ type Print struct {
 type VarStmt struct {
 	name        *tokens.Token
 	initializer expressions.Expr
+}
+
+type Function struct {
+	name   *tokens.Token
+	params []*tokens.Token
+	body   []Stmt
 }
 
 type Block struct {
@@ -95,6 +102,34 @@ func (varst *VarStmt) SetName(nm *tokens.Token) {
 
 func (varst *VarStmt) SetInitializer(init expressions.Expr) {
 	varst.initializer = init
+}
+
+func (fn *Function) Accept(v Visitor) interface{} {
+	return v.VisitFunction(fn)
+}
+
+func (fn *Function) Name() *tokens.Token {
+	return fn.name
+}
+
+func (fn *Function) Params() []*tokens.Token {
+	return fn.params
+}
+
+func (fn *Function) Body() []Stmt {
+	return fn.body
+}
+
+func (fn *Function) SetName(nm *tokens.Token) {
+	fn.name = nm
+}
+
+func (fn *Function) SetParams(pms []*tokens.Token) {
+	fn.params = pms
+}
+
+func (fn *Function) SetBody(bd []Stmt) {
+	fn.body = bd
 }
 
 func (blk *Block) Accept(v Visitor) interface{} {
@@ -185,6 +220,14 @@ func NewVarStmt(nm *tokens.Token, init expressions.Expr) *VarStmt {
 	return &VarStmt{
 		name:        nm,
 		initializer: init,
+	}
+}
+
+func NewFunction(nm *tokens.Token, pms []*tokens.Token, bd []Stmt) *Function {
+	return &Function{
+		name:   nm,
+		params: pms,
+		body:   bd,
 	}
 }
 

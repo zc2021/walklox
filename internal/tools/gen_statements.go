@@ -32,6 +32,16 @@ func main() {
 		},
 	}
 
+	funcStmt := tools.StructStr{
+		Name:  "Function",
+		Param: "fn",
+		Fields: []tools.FieldStr{
+			tools.Fields["token"]("name", "nm", true, false),
+			tools.Fields["token"]("params", "pms", true, true),
+			tools.Fields["stmt"]("body", "bd", false, true),
+		},
+	}
+
 	block := tools.StructStr{
 		Name:  "Block",
 		Param: "blk",
@@ -71,6 +81,7 @@ func main() {
 		expr,
 		prn,
 		varStmt,
+		funcStmt,
 		block,
 		conditional,
 		whileStmt,

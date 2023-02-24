@@ -5,6 +5,7 @@ import (
 	"devZ/lox/internal/reporters"
 	"devZ/lox/internal/statements"
 	"devZ/lox/internal/tokens"
+	"fmt"
 )
 
 const CTX = reporters.PARSING
@@ -68,7 +69,9 @@ func (p *Parser) match(tids ...tokens.TokenType) bool {
 func (p *Parser) declaration() statements.Stmt {
 	var stmt statements.Stmt
 	err := p.accum.LastError()
-	if p.match(tokens.VAR) {
+	if p.match(tokens.FUN) {
+		stmt = p.function("function")
+	} else if p.match(tokens.VAR) {
 		stmt = p.varDeclaration()
 	} else {
 		stmt = p.statement()
@@ -80,8 +83,29 @@ func (p *Parser) declaration() statements.Stmt {
 	return stmt
 }
 
+func (p *Parser) function(kind string) statements.Stmt {
+	name := p.consume(tokens.IDENTIFIER, reporters.Expectation(tokens.IDENTIFIER.String(), "for", fmt.Sprintf("%s name", kind)))
+	p.consume(tokens.LEFT_PAREN, reporters.Expectation("'('", "after", tokens.IDENTIFIER.String()))
+	params := make([]*tokens.Token, 0)
+	if !p.check(tokens.RIGHT_PAREN) {
+		nxt := p.consume(tokens.IDENTIFIER, reporters.Expectation(tokens.IDENTIFIER.String(), "after", "'('"))
+		params = append(params, nxt)
+		for p.match(tokens.COMMA) {
+			if len(params) >= 255 {
+				p.error("cannot have more than 255 parameters")
+			}
+			nxt := p.consume(tokens.IDENTIFIER, reporters.Expectation(tokens.IDENTIFIER.String(), "after", "','"))
+			params = append(params, nxt)
+		}
+	}
+	p.consume(tokens.RIGHT_PAREN, reporters.Expectation("')'", "after", "parameters"))
+	p.consume(tokens.LEFT_BRACE, reporters.Expectation("'{'", "before", fmt.Sprintf("%s body", kind)))
+	body := p.block()
+	return statements.NewFunction(name, params, body)
+}
+
 func (p *Parser) varDeclaration() statements.Stmt {
-	name := p.consume(tokens.IDENTIFIER, reporters.Expectation("a variable name", "after", "var"))
+	name := p.consume(tokens.IDENTIFIER, reporters.Expectation(tokens.IDENTIFIER.String(), "after", "var"))
 	var initializer expressions.Expr
 	if p.match(tokens.EQUAL) {
 		initializer = p.expression()
@@ -169,10 +193,7 @@ func (p *Parser) printStatement() statements.Stmt {
 }
 
 func (p *Parser) blockStatement() statements.Stmt {
-	stmts := make([]statements.Stmt, 0)
-	for !p.check(tokens.RIGHT_BRACE) && !p.isAtEnd() {
-		stmts = append(stmts, p.declaration())
-	}
+	stmts := p.block()
 	p.consume(tokens.RIGHT_BRACE, reporters.Expectation("'}'", "after", "block"))
 	return statements.NewBlock(stmts)
 }
@@ -280,9 +301,17 @@ func (p *Parser) unary() expressions.Expr {
 	return p.call()
 }
 
+func (p *Parser) block() []statements.Stmt {
+	stmts := make([]statements.Stmt, 0)
+	for !p.check(tokens.RIGHT_BRACE) && !p.isAtEnd() {
+		stmts = append(stmts, p.declaration())
+	}
+	return stmts
+}
+
 func (p *Parser) call() expressions.Expr {
 	expr := p.primary()
-	for true {
+	for {
 		if p.match(tokens.LEFT_PAREN) {
 			expr = p.finishCall(expr)
 		} else {
@@ -297,10 +326,11 @@ func (p *Parser) finishCall(cle expressions.Expr) expressions.Expr {
 	if !p.check(tokens.RIGHT_PAREN) {
 		args = append(args, p.expression())
 		for p.match(tokens.COMMA) {
-			args = append(args, p.expression())
 			if len(args) >= 255 {
 				p.error("call cannot have more than 255 arguments")
+				return nil
 			}
+			args = append(args, p.expression())
 		}
 	}
 	paren := p.consume(tokens.LEFT_PAREN, reporters.Expectation("')", "after", "arguments"))

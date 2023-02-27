@@ -30,8 +30,7 @@ func (uf *userFunction) call(i *Interpreter, args []interface{}) interface{} {
 	for i := 0; i < len(uf.declaration.Params()); i++ {
 		env.Define(uf.declaration.Params()[i].Lexeme(), args[i])
 	}
-	i.executeBlockIn(uf.declaration.Body(), env)
-	return nil
+	return i.executeBlockIn(uf.declaration.Body(), env)
 }
 
 func (uf *userFunction) String() string {

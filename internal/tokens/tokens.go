@@ -186,6 +186,10 @@ func (t *Token) String() string {
 	return s
 }
 
+func (tt TokenType) Lexeme() string {
+	return tokens[tt]
+}
+
 func SetOp[T UnFunc | BiFunc](opfn T, tok *Token) {
 	tok.literal = opfn
 }

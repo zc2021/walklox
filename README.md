@@ -10,14 +10,14 @@ Go is not straightforwardly object-oriented in the same way as Java; tangibly, t
 
 There is one other notable quirk of Go which precipitates significant departure from the Lox canon: error handling. Go's "errors are normal data" philosophy is not _necessarily_ at odds with JLox's use of exceptions for control flow in parsing and interpreting, but does once again call for some retooling in the translation.
 
-In facing these crossroads, I have tried to hew as closely as comfortable to the spirit of the original, while producing idiomatic (to a newb's eye) Go code. Major departures from the canonical implementation are discussed in the relevant section of the notes.
+In facing these crossroads, I have tried to hew as closely as comfortable to the spirit of the original, while producing somewhat idiomatic Go code. Major departures from the canonical implementation are discussed in the relevant section of the notes.
 
 ## Main (and the Accumulator)
-Fundamentally, of course, the behavior of `main()` is unchanged.[^cmdnote] I've introduced a reporters package[^rptnote] containing an Accumulator struct, which tracks errors as they are encountered. When `run(script []byte)` is called, a new Accumulator is created within the function body. At the end of each processing stage, the Accumulator is checked for errors; any accumulated errors are printed and the Accumulator is reset. If any errors were found, the program exits using a code provided by the package for the previous processing stage's CTX value (itself taken from the package `reporters`).[^errnote]
+JLox's Lox class, `lox/Lox.java` containing the entrypoint `Lox.main()`, handles the CLI, error reporting, and code input via Lox script or REPL. In GLox, this is replaced by package `main`, which contains `main()`, the CLI, and code input functions, and the `reporters` package[^rptnote], which contains the `Accumulator` struct with associated types and helpers. The `reporters` package additionally provides the `ErrCtx` integer type, which is used as an exit value and by other Lox packages to communicate the context for any errors encountered.[^errnote]
 
-Introducing the accumulator served two immediate purposes: first, to more thoroughly formalize the separation of concerns between ["the code that _generates_ the errors [and] the code that _reports_ them"](https://www.craftinginterpreters.com/scanning.html#error-handling); and second, to avoid having the component packages attempting to access (and set!) global state.[^statenote] 
+Fundamentally, of course, the behavior of `main()` is unchanged.[^cmdnote] Instead of maintaining a global error state (`hadError`), an `Accumulator` tracks errors in all stages of Lox processing[^stgnote]. This accumulator is checked at the end of each stage, and processing stops if any errors were encountered during the previous stage.
 
-Aside from being (imho) poor form for a more formal project[^donthateme], it is not immediately clear that an exact replica of the canonical error state would be possible in Go. Package main cannot be imported; any value or structure that is accessed from both main and a second package must belong to either the second or a third package.[^pkgnote] This technical requirement provided the perfect excuse to fill in the sketch of error handling provided by the canonical implementation.
+Introducing the accumulator avoids the issue that it is not immediately clear an exact replica of the canonical error state would be possible in Go. Package main cannot be imported; any value or structure that is accessed from both main and a second package must belong to either the second or a third package. This technical requirement provided the perfect excuse to fill in the sketch of error handling provided by the canonical implementation.
 
 ## Tokens
 An individual token is implemented as a struct with fields for token type, source line location, represented lexeme, and literal value.
@@ -37,8 +37,4 @@ A Token has no exported fields and minimal setters, to reflect the use `final` o
 
 [^errnote]: Error codes as given in UNIX's [sysexits.h](https://www.freebsd.org/cgi/man.cgi?query=sysexits&apropos=0&sektion=0&manpath=FreeBSD+4.3-RELEASE&format=html), as linked by Nystrom.
 
-[^statenote]: It is worth noting that the canonical error tracking variable, `hadError`, is not _truly_ global as it is a public static member of the Lox class. This is as close as Java gets to a true global constant, and I still dislike the pattern.
-
-[^donthateme]: The choice of a global error state completely makes sense in a book focused on introducing concerns of language design over precise technical implementation, similar to the use of static imports.
-
-[^pkgnote]: Which is then, of course, imported to main for use.
+[^stgnote]: Scanning, parsing, interpreting

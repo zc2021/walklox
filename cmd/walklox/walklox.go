@@ -67,6 +67,7 @@ func run(script []byte, env *environment.Execution) (interface{}, int) {
 		return nil, int(scanner.CTX)
 	}
 	prs := parser.New(toks, accum)
+	prs.Printer = &reporters.PrettyPrinter{}
 	stmts := prs.Parse()
 	if checkErrs(accum) != nil {
 		return nil, int(parser.CTX)

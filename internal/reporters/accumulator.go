@@ -15,6 +15,11 @@ type Accumulator struct {
 	comments []*loxComment
 }
 
+type loxComment struct {
+	line    int
+	message string
+}
+
 type loxError struct {
 	line    int
 	message string
@@ -32,11 +37,6 @@ const (
 	PARSING      ErrCtx = 65
 	INTERPRETING ErrCtx = 70
 )
-
-type loxComment struct {
-	line    int
-	message string
-}
 
 func NewAccumulator() *Accumulator {
 	return &Accumulator{

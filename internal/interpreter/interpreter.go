@@ -12,10 +12,11 @@ import (
 const CTX = reporters.INTERPRETING
 
 type Interpreter struct {
-	globals *environment.Execution
-	env     *environment.Execution
-	accum   *reporters.Accumulator
-	Printer *reporters.PrettyPrinter
+	returning bool
+	globals   *environment.Execution
+	env       *environment.Execution
+	accum     *reporters.Accumulator
+	Printer   *reporters.PrettyPrinter
 }
 
 func New(a *reporters.Accumulator, e *environment.Execution) *Interpreter {
@@ -45,7 +46,7 @@ func stringify(val interface{}) string {
 		return "nil"
 	}
 	switch t := val.(type) {
-	case string, bool, float64:
+	case string, bool, float64, int64, *userFunction:
 		return fmt.Sprintf("%v", val)
 	default:
 		return fmt.Sprintf("cannot interpret %s", t)
@@ -68,7 +69,9 @@ func (i *Interpreter) VisitCall(cl *expressions.Call) interface{} {
 		arityMsg := fmt.Sprintf("%d arguments", fn.arity())
 		i.accum.AddError(loc, reporters.Expectation(arityMsg, "in", "call"), CTX)
 	}
-	return fn.call(i, args)
+	val := fn.call(i, args)
+	i.stopRet()
+	return val
 }
 
 func (i *Interpreter) VisitBinary(bi *expressions.Binary) interface{} {
@@ -173,6 +176,15 @@ func (i *Interpreter) VisitPrint(prnst *statements.Print) interface{} {
 	return nil
 }
 
+func (i *Interpreter) VisitReturn(ret *statements.Return) interface{} {
+	var value interface{}
+	if ret.Value() != nil {
+		value = i.evaluate(ret.Value())
+	}
+	i.startRet()
+	return value
+}
+
 func (i *Interpreter) VisitVarStmt(varst *statements.VarStmt) interface{} {
 	var val interface{}
 	if varst.Initializer() != nil {
@@ -201,17 +213,53 @@ func (i *Interpreter) VisitIf(ifst *statements.If) interface{} {
 
 func (i *Interpreter) VisitWhile(whst *statements.While) interface{} {
 	var val interface{}
-	for environment.IsTruthy(i.evaluate(whst.Condition())).(bool) {
+	cnd := environment.IsTruthy(i.evaluate(whst.Condition())).(bool)
+	for cnd {
 		val = i.execute(whst.Body())
 		if i.checkBreak(val) {
+			cnd = false
 			break
 		}
+		if i.checkReturn() {
+			return val
+		}
+		cnd = environment.IsTruthy(i.evaluate(whst.Condition())).(bool)
 	}
 	return val
 }
 
 func (i *Interpreter) VisitBreak(brkst *statements.Break) interface{} {
 	return brkst.Tok()
+}
+
+func (i *Interpreter) evaluate(e expressions.Expr) interface{} {
+	return e.Accept(i)
+}
+
+func (i *Interpreter) execute(s statements.Stmt) interface{} {
+	return s.Accept(i)
+}
+
+func (i *Interpreter) executeBlock(stmts []statements.Stmt) interface{} {
+	var val interface{}
+	for _, stmt := range stmts {
+		val = i.execute(stmt)
+		if i.accum.HasErrors() || i.checkBreak(val) {
+			break
+		}
+		if i.checkReturn() {
+			return val
+		}
+	}
+	return val
+}
+
+func (i *Interpreter) executeBlockIn(stmts []statements.Stmt, block_env *environment.Execution) interface{} {
+	prev := i.env
+	i.env = block_env
+	val := i.executeBlock(stmts)
+	i.env = prev
+	return val
 }
 
 func (i *Interpreter) checkNum(x interface{}, loc int, msg string) (float64, bool) {
@@ -240,29 +288,14 @@ func (i *Interpreter) checkBreak(x interface{}) bool {
 	return tok.ID() == tokens.BREAK
 }
 
-func (i *Interpreter) evaluate(e expressions.Expr) interface{} {
-	return e.Accept(i)
+func (i *Interpreter) startRet() {
+	i.returning = true
 }
 
-func (i *Interpreter) execute(s statements.Stmt) interface{} {
-	return s.Accept(i)
+func (i *Interpreter) stopRet() {
+	i.returning = false
 }
 
-func (i *Interpreter) executeBlock(stmts []statements.Stmt) interface{} {
-	var val interface{}
-	for _, stmt := range stmts {
-		val = i.execute(stmt)
-		if i.accum.HasErrors() {
-			break
-		}
-	}
-	return val
-}
-
-func (i *Interpreter) executeBlockIn(stmts []statements.Stmt, block_env *environment.Execution) interface{} {
-	prev := i.env
-	i.env = block_env
-	val := i.executeBlock(stmts)
-	i.env = prev
-	return val
+func (i *Interpreter) checkReturn() bool {
+	return i.returning
 }

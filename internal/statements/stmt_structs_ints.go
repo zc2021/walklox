@@ -16,6 +16,7 @@ type Visitor interface {
 	VisitPrint(prnst *Print) interface{}
 	VisitVarStmt(varst *VarStmt) interface{}
 	VisitFunction(fn *Function) interface{}
+	VisitReturn(ret *Return) interface{}
 	VisitBlock(blk *Block) interface{}
 	VisitIf(ifst *If) interface{}
 	VisitWhile(whst *While) interface{}
@@ -39,6 +40,11 @@ type Function struct {
 	name   *tokens.Token
 	params []*tokens.Token
 	body   []Stmt
+}
+
+type Return struct {
+	keyword *tokens.Token
+	value   expressions.Expr
 }
 
 type Block struct {
@@ -130,6 +136,26 @@ func (fn *Function) SetParams(pms []*tokens.Token) {
 
 func (fn *Function) SetBody(bd []Stmt) {
 	fn.body = bd
+}
+
+func (ret *Return) Accept(v Visitor) interface{} {
+	return v.VisitReturn(ret)
+}
+
+func (ret *Return) Keyword() *tokens.Token {
+	return ret.keyword
+}
+
+func (ret *Return) Value() expressions.Expr {
+	return ret.value
+}
+
+func (ret *Return) SetKeyword(kw *tokens.Token) {
+	ret.keyword = kw
+}
+
+func (ret *Return) SetValue(vl expressions.Expr) {
+	ret.value = vl
 }
 
 func (blk *Block) Accept(v Visitor) interface{} {
@@ -228,6 +254,13 @@ func NewFunction(nm *tokens.Token, pms []*tokens.Token, bd []Stmt) *Function {
 		name:   nm,
 		params: pms,
 		body:   bd,
+	}
+}
+
+func NewReturn(kw *tokens.Token, vl expressions.Expr) *Return {
+	return &Return{
+		keyword: kw,
+		value:   vl,
 	}
 }
 

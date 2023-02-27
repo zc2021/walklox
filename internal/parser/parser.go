@@ -70,7 +70,7 @@ func (p *Parser) declaration() statements.Stmt {
 	var stmt statements.Stmt
 	err := p.accum.LastError()
 	if p.match(tokens.FUN) {
-		stmt = p.function("function")
+		stmt = p.funDeclaration("function")
 	} else if p.match(tokens.VAR) {
 		stmt = p.varDeclaration()
 	} else {
@@ -83,34 +83,35 @@ func (p *Parser) declaration() statements.Stmt {
 	return stmt
 }
 
-func (p *Parser) function(kind string) statements.Stmt {
-	name := p.consume(tokens.IDENTIFIER, reporters.Expectation(tokens.IDENTIFIER.String(), "for", fmt.Sprintf("%s name", kind)))
-	p.consume(tokens.LEFT_PAREN, reporters.Expectation("'('", "after", tokens.IDENTIFIER.String()))
+func (p *Parser) funDeclaration(kind string) statements.Stmt {
+	name := p.consume(tokens.IDENTIFIER, reporters.Expectation(tokens.IDENTIFIER.Lexeme(), "for", fmt.Sprintf("%s name", kind)))
 	params := make([]*tokens.Token, 0)
+	p.consume(tokens.LEFT_PAREN, reporters.Expectation(tokens.LEFT_PAREN.Lexeme(), "after", tokens.IDENTIFIER.String()))
 	if !p.check(tokens.RIGHT_PAREN) {
-		nxt := p.consume(tokens.IDENTIFIER, reporters.Expectation(tokens.IDENTIFIER.String(), "after", "'('"))
+		nxt := p.consume(tokens.IDENTIFIER, reporters.Expectation(tokens.IDENTIFIER.Lexeme(), "after", tokens.RIGHT_PAREN.Lexeme()))
 		params = append(params, nxt)
 		for p.match(tokens.COMMA) {
 			if len(params) >= 255 {
 				p.error("cannot have more than 255 parameters")
 			}
-			nxt := p.consume(tokens.IDENTIFIER, reporters.Expectation(tokens.IDENTIFIER.String(), "after", "','"))
+			nxt := p.consume(tokens.IDENTIFIER, reporters.Expectation(tokens.IDENTIFIER.Lexeme(), "after", tokens.COMMA.Lexeme()))
 			params = append(params, nxt)
 		}
 	}
-	p.consume(tokens.RIGHT_PAREN, reporters.Expectation("')'", "after", "parameters"))
-	p.consume(tokens.LEFT_BRACE, reporters.Expectation("'{'", "before", fmt.Sprintf("%s body", kind)))
+	p.consume(tokens.RIGHT_PAREN, reporters.Expectation(tokens.RIGHT_PAREN.Lexeme(), "after", "parameters"))
+	p.consume(tokens.LEFT_BRACE, reporters.Expectation(tokens.LEFT_BRACE.Lexeme(), "before", fmt.Sprintf("%s body", kind)))
 	body := p.block()
+	p.consume(tokens.RIGHT_BRACE, reporters.Expectation(tokens.RIGHT_BRACE.Lexeme(), "after", fmt.Sprintf("%s declaration", kind)))
 	return statements.NewFunction(name, params, body)
 }
 
 func (p *Parser) varDeclaration() statements.Stmt {
-	name := p.consume(tokens.IDENTIFIER, reporters.Expectation(tokens.IDENTIFIER.String(), "after", "var"))
+	name := p.consume(tokens.IDENTIFIER, reporters.Expectation(tokens.IDENTIFIER.Lexeme(), "after", "var"))
 	var initializer expressions.Expr
 	if p.match(tokens.EQUAL) {
 		initializer = p.expression()
 	}
-	p.consume(tokens.SEMICOLON, reporters.Expectation("';'", "after", "variable declaration"))
+	p.consume(tokens.SEMICOLON, reporters.Expectation(tokens.SEMICOLON.Lexeme(), "after", "variable declaration"))
 	return statements.NewVarStmt(name, initializer)
 }
 
@@ -135,11 +136,14 @@ func (p *Parser) statement() statements.Stmt {
 	if p.match(tokens.IF) {
 		return p.ifStatement()
 	}
-	if p.match(tokens.WHILE) {
-		return p.whileStatement()
-	}
 	if p.match(tokens.PRINT) {
 		return p.printStatement()
+	}
+	if p.match(tokens.RETURN) {
+		return p.returnStatement()
+	}
+	if p.match(tokens.WHILE) {
+		return p.whileStatement()
 	}
 	if p.match(tokens.LEFT_BRACE) {
 		return p.blockStatement()
@@ -149,12 +153,12 @@ func (p *Parser) statement() statements.Stmt {
 
 func (p *Parser) breakStatement() statements.Stmt {
 	tok := p.previous()
-	p.consume(tokens.SEMICOLON, reporters.Expectation("';'", "after", "'break'"))
+	p.consume(tokens.SEMICOLON, reporters.Expectation(tokens.SEMICOLON.Lexeme(), "after", "'break'"))
 	return statements.NewBreak(tok)
 }
 
 func (p *Parser) forStatement() statements.Stmt {
-	p.consume(tokens.LEFT_PAREN, reporters.Expectation("'('", "after", "'for'"))
+	p.consume(tokens.LEFT_PAREN, reporters.Expectation(tokens.LEFT_PAREN.Lexeme(), "after", "'for'"))
 	var init statements.Stmt
 	if p.match(tokens.SEMICOLON) {
 		init = nil
@@ -167,11 +171,11 @@ func (p *Parser) forStatement() statements.Stmt {
 	if !p.check(tokens.SEMICOLON) {
 		cnd = p.expression()
 	}
-	p.consume(tokens.SEMICOLON, reporters.Expectation("';'", "after", "loop condition"))
+	p.consume(tokens.SEMICOLON, reporters.Expectation(tokens.SEMICOLON.Lexeme(), "after", "loop condition"))
 	if !p.check(tokens.RIGHT_PAREN) {
 		incr = p.expression()
 	}
-	p.consume(tokens.RIGHT_PAREN, reporters.Expectation("')'", "after", "for clauses"))
+	p.consume(tokens.RIGHT_PAREN, reporters.Expectation(tokens.RIGHT_PAREN.Lexeme(), "after", "for clauses"))
 	bd := p.loopStatement()
 	if incr != nil {
 		bd = statements.NewBlock([]statements.Stmt{bd, statements.NewExpression(incr)})
@@ -188,20 +192,30 @@ func (p *Parser) forStatement() statements.Stmt {
 
 func (p *Parser) printStatement() statements.Stmt {
 	expr := p.expression()
-	p.consume(tokens.SEMICOLON, reporters.Expectation("';'", "after", "value"))
+	p.consume(tokens.SEMICOLON, reporters.Expectation(tokens.SEMICOLON.Lexeme(), "after", "value"))
 	return statements.NewPrint(expr)
+}
+
+func (p *Parser) returnStatement() statements.Stmt {
+	keyword := p.previous()
+	var value expressions.Expr
+	if !p.check(tokens.SEMICOLON) {
+		value = p.expression()
+	}
+	p.consume(tokens.SEMICOLON, reporters.Expectation(tokens.SEMICOLON.Lexeme(), "after", keyword.Lexeme()))
+	return statements.NewReturn(keyword, value)
 }
 
 func (p *Parser) blockStatement() statements.Stmt {
 	stmts := p.block()
-	p.consume(tokens.RIGHT_BRACE, reporters.Expectation("'}'", "after", "block"))
+	p.consume(tokens.RIGHT_BRACE, reporters.Expectation(tokens.RIGHT_BRACE.Lexeme(), "after", "block"))
 	return statements.NewBlock(stmts)
 }
 
 func (p *Parser) ifStatement() statements.Stmt {
-	p.consume(tokens.LEFT_PAREN, reporters.Expectation("'('", "after", "if"))
+	p.consume(tokens.LEFT_PAREN, reporters.Expectation(tokens.LEFT_PAREN.Lexeme(), "after", "if"))
 	condition := p.expression()
-	p.consume(tokens.RIGHT_PAREN, reporters.Expectation("')'", "after", "if condition"))
+	p.consume(tokens.RIGHT_PAREN, reporters.Expectation(tokens.RIGHT_PAREN.Lexeme(), "after", "if condition"))
 	thenBr := p.statement()
 	var elseBr statements.Stmt
 	if p.match(tokens.ELSE) {
@@ -211,16 +225,16 @@ func (p *Parser) ifStatement() statements.Stmt {
 }
 
 func (p *Parser) whileStatement() statements.Stmt {
-	p.consume(tokens.LEFT_PAREN, reporters.Expectation("'('", "after", "while"))
+	p.consume(tokens.LEFT_PAREN, reporters.Expectation(tokens.LEFT_PAREN.Lexeme(), "after", "while"))
 	cnd := p.expression()
-	p.consume(tokens.RIGHT_PAREN, reporters.Expectation("')'", "after", "while condition"))
+	p.consume(tokens.RIGHT_PAREN, reporters.Expectation(tokens.RIGHT_PAREN.Lexeme(), "after", "while condition"))
 	bd := p.loopStatement()
 	return statements.NewWhile(cnd, bd)
 }
 
 func (p *Parser) exprStatement() statements.Stmt {
 	expr := p.expression()
-	p.consume(tokens.SEMICOLON, reporters.Expectation("';'", "after", "expression"))
+	p.consume(tokens.SEMICOLON, reporters.Expectation(tokens.SEMICOLON.Lexeme(), "after", "expression"))
 	return statements.NewExpression(expr)
 }
 
@@ -333,7 +347,7 @@ func (p *Parser) finishCall(cle expressions.Expr) expressions.Expr {
 			args = append(args, p.expression())
 		}
 	}
-	paren := p.consume(tokens.LEFT_PAREN, reporters.Expectation("')", "after", "arguments"))
+	paren := p.consume(tokens.RIGHT_PAREN, reporters.Expectation(tokens.RIGHT_PAREN.Lexeme(), "after", "arguments"))
 	return expressions.NewCall(cle, paren, args)
 }
 
@@ -355,7 +369,7 @@ func (p *Parser) primary() expressions.Expr {
 	}
 	if p.match(tokens.LEFT_PAREN) {
 		ex := p.expression()
-		p.consume(tokens.RIGHT_PAREN, reporters.Expectation("')'", "after", "expression"))
+		p.consume(tokens.RIGHT_PAREN, reporters.Expectation(tokens.RIGHT_PAREN.Lexeme(), "after", "expression"))
 		return ex
 	}
 	p.error(reporters.Expectation("expression", "", ""))

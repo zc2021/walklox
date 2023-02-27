@@ -42,6 +42,15 @@ func main() {
 		},
 	}
 
+	returnStmt := tools.StructStr{
+		Name:  "Return",
+		Param: "ret",
+		Fields: []tools.FieldStr{
+			tools.Fields["token"]("keyword", "kw", true, false),
+			tools.Fields["expression"]("value", "vl", true, false),
+		},
+	}
+
 	block := tools.StructStr{
 		Name:  "Block",
 		Param: "blk",
@@ -82,6 +91,7 @@ func main() {
 		prn,
 		varStmt,
 		funcStmt,
+		returnStmt,
 		block,
 		conditional,
 		whileStmt,

@@ -17,7 +17,7 @@ JLox's Lox class, `lox/Lox.java` containing the entrypoint `Lox.main()`, handles
 
 Fundamentally, of course, the behavior of `main()` is unchanged.[^cmdnote] Instead of maintaining a global error state (`hadError`), an `Accumulator` tracks errors in all stages of Lox processing[^stgnote]. This accumulator is checked at the end of each stage, and processing stops if any errors were encountered during the previous stage.
 
-Introducing the accumulator avoids the issue that it is not immediately clear an exact replica of the canonical error state would be possible in Go. Package main cannot be imported; any value or structure that is accessed from both main and a second package must belong to either the second or a third package. This technical requirement provided the perfect excuse to fill in the sketch of error handling provided by the canonical implementation.
+
 
 ## Tokens
 An individual token is implemented as a struct with fields for token type, source line location, represented lexeme, and literal value.

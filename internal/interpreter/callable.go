@@ -1,8 +1,8 @@
 package interpreter
 
 import (
-	"devZ/lox/internal/environment"
 	"devZ/lox/internal/statements"
+	"devZ/lox/internal/tokens"
 	"fmt"
 )
 
@@ -26,11 +26,17 @@ func (uf *userFunction) arity() int {
 }
 
 func (uf *userFunction) call(i *Interpreter, args []interface{}) interface{} {
-	env := environment.Copy(i.env)
-	for i := 0; i < len(uf.declaration.Params()); i++ {
-		env.Define(uf.declaration.Params()[i].Lexeme(), args[i])
+	env := i.env.Block()
+	for j := 0; j < len(uf.declaration.Params()); j++ {
+		val := args[j]
+		tok, ok := val.(*tokens.Token)
+		if ok {
+			val = i.env.Get(tok)
+		}
+		env.Define(uf.declaration.Params()[j].Lexeme(), val)
 	}
-	return i.executeBlockIn(uf.declaration.Body(), env)
+	val := i.executeBlockIn(uf.declaration.Body(), env)
+	return val
 }
 
 func (uf *userFunction) String() string {

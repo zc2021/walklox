@@ -39,7 +39,7 @@ type Scanner struct {
 }
 
 func New(src []byte, a *reporters.Accumulator) *Scanner {
-	return &Scanner{source: src, accum: a}
+	return &Scanner{source: src, accum: a, srcLn: 1}
 }
 
 func (s *Scanner) AddPrinter(pp *reporters.PrettyPrinter) {

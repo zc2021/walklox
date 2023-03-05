@@ -1,9 +1,6 @@
 // Package tokens defines the Token struct and associated methods, representing
 // Lox tokens. Tokens are created by the scanner, and contain source-code
 // context information.
-// Elements of the implementation (TokID as an iota with string-slice,
-// Token.String() method, etc) are taken almost directly from the Go language
-// token implementation (thanks!).
 package tokens
 
 import (
@@ -188,19 +185,4 @@ func (t *Token) String() string {
 
 func (tt TokenType) Lexeme() string {
 	return tokens[tt]
-}
-
-func SetOp[T UnFunc | BiFunc](opfn T, tok *Token) {
-	tok.literal = opfn
-}
-
-type UnFunc func(x interface{}) interface{}
-type BiFunc func(x, y interface{}) interface{}
-
-func (t *Token) UnFunc(x interface{}) interface{} {
-	return t.literal.(UnFunc)(x)
-}
-
-func (t *Token) BiFunc(x, y interface{}) interface{} {
-	return t.literal.(BiFunc)(x, y)
 }

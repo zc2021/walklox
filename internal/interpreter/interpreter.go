@@ -12,11 +12,10 @@ import (
 const CTX = reporters.INTERPRETING
 
 type Interpreter struct {
-	returning bool
-	globals   *environment.Execution
-	env       *environment.Execution
-	accum     *reporters.Accumulator
-	Printer   *reporters.PrettyPrinter
+	globals *environment.Execution
+	env     *environment.Execution
+	accum   *reporters.Accumulator
+	Printer *reporters.PrettyPrinter
 }
 
 func New(a *reporters.Accumulator, e *environment.Execution) *Interpreter {
@@ -46,7 +45,7 @@ func stringify(val interface{}) string {
 		return "nil"
 	}
 	switch t := val.(type) {
-	case string, bool, float64, int64, *userFunction:
+	case string, bool, float64, int64, *userFunction, clock:
 		return fmt.Sprintf("%v", val)
 	default:
 		return fmt.Sprintf("cannot interpret %s", t)
@@ -70,7 +69,6 @@ func (i *Interpreter) VisitCall(cl *expressions.Call) interface{} {
 		i.accum.AddError(loc, reporters.Expectation(arityMsg, "in", "call"), CTX)
 	}
 	val := fn.call(i, args)
-	i.stopRet()
 	return val
 }
 
@@ -181,7 +179,7 @@ func (i *Interpreter) VisitReturn(ret *statements.Return) interface{} {
 	if ret.Value() != nil {
 		value = i.evaluate(ret.Value())
 	}
-	i.startRet()
+	i.env.StartRet()
 	return value
 }
 
@@ -288,14 +286,6 @@ func (i *Interpreter) checkBreak(x interface{}) bool {
 	return tok.ID() == tokens.BREAK
 }
 
-func (i *Interpreter) startRet() {
-	i.returning = true
-}
-
-func (i *Interpreter) stopRet() {
-	i.returning = false
-}
-
 func (i *Interpreter) checkReturn() bool {
-	return i.returning
+	return i.env.Returning()
 }

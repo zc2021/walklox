@@ -10,6 +10,7 @@ import (
 type Execution struct {
 	enclosing  *Execution
 	values     map[string]interface{}
+	returning  bool
 	accum      *reporters.Accumulator
 	ctx        reporters.ErrCtx
 	unary_ops  []tokens.UnFunc
@@ -18,15 +19,6 @@ type Execution struct {
 
 func NewGlobal() *Execution {
 	unfns, bifns := defaultOps()
-	return &Execution{
-		values:     make(map[string]interface{}),
-		unary_ops:  unfns,
-		binary_ops: bifns,
-	}
-}
-
-func Copy(e *Execution) *Execution {
-	unfns, bifns := copyOps(e)
 	return &Execution{
 		values:     make(map[string]interface{}),
 		unary_ops:  unfns,
@@ -62,14 +54,31 @@ func (ex *Execution) Define(nm string, val interface{}) {
 	ex.values[nm] = val
 }
 
-func (ex *Execution) Get(vr *tokens.Token) interface{} {
-	un := ex.unary_ops[vr.ID()]
-	if un != nil {
-		return un
+func (ex *Execution) BinaryOp(t *tokens.Token) tokens.BiFunc {
+	op := ex.binary_ops[t.ID()]
+	if op != nil {
+		return op
 	}
-	bi := ex.binary_ops[vr.ID()]
-	if bi != nil {
-		return bi
+	if ex.enclosing != nil {
+		return ex.enclosing.BinaryOp(t)
+	}
+	return nil
+}
+
+func (ex *Execution) UnaryOp(t *tokens.Token) tokens.UnFunc {
+	op := ex.unary_ops[t.ID()]
+	if op != nil {
+		return op
+	}
+	if ex.enclosing != nil {
+		return ex.enclosing.UnaryOp(t)
+	}
+	return nil
+}
+
+func (ex *Execution) Get(vr *tokens.Token) interface{} {
+	if vr.ID() == tokens.STRING || vr.ID() == tokens.NUMBER {
+		return vr.Literal()
 	}
 	nm := vr.Lexeme()
 	val, set := ex.values[nm]
@@ -102,4 +111,16 @@ func (ex *Execution) Assign(as *expressions.Assignment, val interface{}) {
 func (ex *Execution) undefinedVar(nm string, loc int) {
 	msg := fmt.Sprintf("undefined variable %s referenced", nm)
 	ex.accum.AddError(loc, msg, ex.ctx)
+}
+
+func (ex *Execution) StartRet() {
+	ex.returning = true
+}
+
+func (ex *Execution) StopRet() {
+	ex.returning = false
+}
+
+func (ex *Execution) Returning() bool {
+	return ex.returning
 }

@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"devZ/lox/internal/environment"
 	"devZ/lox/internal/statements"
 	"devZ/lox/internal/tokens"
 	"fmt"
@@ -12,13 +13,18 @@ type callable interface {
 }
 
 type userFunction struct {
+	closure     *environment.Execution
 	declaration *statements.Function
 }
 
 func newFunc(dec *statements.Function, i *Interpreter) *userFunction {
-	return &userFunction{
+	env := environment.Copy(i.env)
+	fn := &userFunction{
 		declaration: dec,
+		closure:     env,
 	}
+	fn.closure.Define(dec.Name().Lexeme(), fn)
+	return fn
 }
 
 func (uf *userFunction) arity() int {
@@ -26,7 +32,7 @@ func (uf *userFunction) arity() int {
 }
 
 func (uf *userFunction) call(i *Interpreter, args []interface{}) interface{} {
-	env := i.env.Block()
+	env := uf.closure.Block()
 	for j := 0; j < len(uf.declaration.Params()); j++ {
 		val := args[j]
 		tok, ok := val.(*tokens.Token)

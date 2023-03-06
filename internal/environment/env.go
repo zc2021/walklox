@@ -26,6 +26,22 @@ func NewGlobal() *Execution {
 	}
 }
 
+func Copy(ex *Execution) *Execution {
+	unfns, bifns := copyOps(ex)
+	vals := make(map[string]interface{})
+	for nm, v := range ex.values {
+		vals[nm] = v
+	}
+	return &Execution{
+		enclosing:  ex.enclosing,
+		values:     vals,
+		unary_ops:  unfns,
+		binary_ops: bifns,
+		accum:      ex.accum,
+		ctx:        ex.ctx,
+	}
+}
+
 func (ex *Execution) Block() *Execution {
 	unfns, bifns := copyOps(ex)
 	return &Execution{
@@ -77,7 +93,8 @@ func (ex *Execution) UnaryOp(t *tokens.Token) tokens.UnFunc {
 }
 
 func (ex *Execution) Get(vr *tokens.Token) interface{} {
-	if vr.ID() == tokens.STRING || vr.ID() == tokens.NUMBER {
+	tid := vr.ID()
+	if tid == tokens.STRING || tid == tokens.NUMBER {
 		return vr.Literal()
 	}
 	nm := vr.Lexeme()

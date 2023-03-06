@@ -195,6 +195,9 @@ func (i *Interpreter) VisitVarStmt(varst *statements.VarStmt) interface{} {
 func (i *Interpreter) VisitBlock(blk *statements.Block) interface{} {
 	i.env = i.env.Block()
 	val := i.executeBlock(blk.Statements())
+	if i.env.Returning() {
+		i.env.Up().StartRet()
+	}
 	i.env = i.env.Up()
 	return val
 }
